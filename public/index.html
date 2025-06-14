@@ -38,23 +38,23 @@
         <div class="flex justify-between">
           <label class="flex flex-col items-center text-gray-600">
             <input type="radio" name="satisfaction" value="1" class="form-radio mb-1" required />
-            <img src="face1.png" alt="Satisfaction level 1" class="w-10 h-10" />
+            <img src="face1.png" alt="Satisfaction level 1" class="w-10 h-10" />
           </label>
           <label class="flex flex-col items-center text-gray-600">
             <input type="radio" name="satisfaction" value="2" class="form-radio mb-1" />
-            <img src="face2.png" alt="Satisfaction level 2" class="w-10 h-10" />
+            <img src="face2.png" alt="Satisfaction level 2" class="w-10 h-10" />
           </label>
           <label class="flex flex-col items-center text-gray-600">
             <input type="radio" name="satisfaction" value="3" class="form-radio mb-1" />
-            <img src="face3.png" alt="Satisfaction level 3" class="w-10 h-10" />
+            <img src="face3.png" alt="Satisfaction level 3" class="w-10 h-10" />
           </label>
           <label class="flex flex-col items-center text-gray-600">
             <input type="radio" name="satisfaction" value="4" class="form-radio mb-1" />
-            <img src="face4.png" alt="Satisfaction level 4" class="w-10 h-10" />
+            <img src="face4.png" alt="Satisfaction level 4" class="w-10 h-10" />
           </label>
           <label class="flex flex-col items-center text-gray-600">
             <input type="radio" name="satisfaction" value="5" class="form-radio mb-1" />
-            <img src="face5.png" alt="Satisfaction level 5" class="w-10 h-10" />
+            <img src="face5.png" alt="Satisfaction level 5" class="w-10 h-10" />
           </label>
         </div>
       </div>
@@ -75,11 +75,15 @@
 
       <button
         type="submit"
-        class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 w-full"
+        id="submitBtn"
+        class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 w-full disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Submit
       </button>
     </form>
+
+    <!-- Error display -->
+    <div id="errorMessage" class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"></div>
   </div>
 
   <!-- Thank‑You Modal -->
@@ -93,82 +97,6 @@
     </div>
   </div>
 
-  <script type="module">
-    const endpoint = "https://prod-149.westeurope.logic.azure.com:443/workflows/5d4cdfd91c2748449afff34157bd8379/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tM2yN2voxBg0uq1F7G4r5-i4Mxku3asseDZjrGgLqBw";
-
-    // Robust CSV autocomplete loader (handles quoted line breaks and commas)
-    (async () => {
-      try {
-        const res = await fetch('./courses.csv');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const csv = await res.text();
-        const lines = csv.split('\n');
-        const records = [];
-        let buffer = '';
-        let inQuotes = false;
-        lines.forEach(line => {
-          const quoteCount = (line.match(/"/g) || []).length;
-          if (!inQuotes) {
-            buffer = line;
-            if (quoteCount % 2 !== 0) {
-              inQuotes = true;
-            } else {
-              records.push(buffer);
-            }
-          } else {
-            buffer += '\n' + line;
-            if (quoteCount % 2 !== 0) {
-              inQuotes = false;
-              records.push(buffer);
-            }
-          }
-        });
-        // drop header
-        records.shift();
-        const dl = document.getElementById('courses');
-        records.forEach(record => {
-          const idx = record.indexOf(',');
-          const code = record.slice(0, idx).trim();
-          let rawName = record.slice(idx + 1);
-          rawName = rawName
-            .replace(/\r/g, '')
-            .replace(/CR$/, '')
-            .replace(/^"+|"+$/g, '')
-            .trim();
-          const opt = document.createElement('option');
-          opt.value = `${code} - ${rawName}`;
-          dl.appendChild(opt);
-        });
-      } catch (err) {
-        console.error('Error loading courses.csv:', err);
-      }
-    })();
-
-    const form = document.getElementById("surveyForm");
-    const modal = document.getElementById("thankYouModal");
-    const closeBtn = document.getElementById("closeModal");
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const payload = {
-        student_number: form.student_number.value.trim(),
-        satisfaction: Number(
-          form.querySelector('input[name="satisfaction"]:checked').value
-        ),
-        course_number: form.course_number.value.trim() || null
-      };
-      modal.classList.remove('hidden');
-      fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }).catch(err => console.error("Background submit failed:", err));
-      form.reset();
-    });
-
-    closeBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
-  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
