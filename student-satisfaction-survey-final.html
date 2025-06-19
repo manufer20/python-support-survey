@@ -93,8 +93,57 @@
     </div>
   </div>
 
+  <!-- One‑time Daily Login Modal -->
+  <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
+      <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
+      <input id="accessCodeInput"
+             type="password"
+             placeholder="Enter daily code"
+             class="border border-gray-300 p-2 w-full rounded mb-4" />
+      <button id="codeSubmit"
+              class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 w-full">
+        Enter
+      </button>
+      <p id="loginError" class="text-sm text-red-600 mt-2 hidden">Incorrect code. Try again.</p>
+    </div>
+  </div>
+
   <script type="module">
-    const endpoint = "https://prod-149.westeurope.logic.azure.com:443/workflows/5d4cdfd91c2748449afff34157bd8379/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tM2yN2voxBg0uq1F7G4r5-i4Mxku3asseDZjrGgLqBw";
+  // Logic App endpoint
+  const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
+  console.log("Survey will POST to:", endpoint);
+
+  // === Simple daily code protection ===
+  const ACCESS_KEY = "RacingCampeon2025";              // same value checked in the Flow
+  const STORAGE_KEY = "surveyAuth";
+  const ONE_DAY_MS  = 24 * 60 * 60 * 1000;
+
+  function isAuthValid() {
+    const ts = Number(localStorage.getItem(STORAGE_KEY));
+    return ts && Date.now() - ts < ONE_DAY_MS;
+  }
+
+  function showLogin() {
+    document.getElementById("loginModal").classList.remove("hidden");
+  }
+  function hideLogin() {
+    document.getElementById("loginModal").classList.add("hidden");
+  }
+
+  // Initial auth check
+  if (!isAuthValid()) showLogin();
+
+  // Handle code submission
+  document.getElementById("codeSubmit").addEventListener("click", () => {
+    const input = document.getElementById("accessCodeInput").value.trim();
+    if (input === ACCESS_KEY) {
+      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      hideLogin();
+    } else {
+      document.getElementById("loginError").classList.remove("hidden");
+    }
+  });
 
     // Robust CSV autocomplete loader (handles quoted line breaks and commas)
     (async () => {
@@ -160,10 +209,19 @@
       modal.classList.remove('hidden');
       fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ACCESS_KEY
+        },
         body: JSON.stringify(payload)
       }).catch(err => console.error("Background submit failed:", err));
+
+      // Clear form and UX focus, then auto‑hide thank‑you after 1.5 s
       form.reset();
+      document.activeElement?.blur();
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 1500);
     });
 
     closeBtn.addEventListener('click', () => {
