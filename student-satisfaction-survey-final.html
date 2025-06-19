@@ -112,10 +112,9 @@
   <script type="module">
   // Logic App endpoint
   const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
-  console.log("Survey will POST to:", endpoint);
 
   // === Simple daily code protection ===
-  const ACCESS_KEY = "RacingCampeon2025";              // same value checked in the Flow
+  let currentKey = null;  // will store the code entered by the supporter
   const STORAGE_KEY = "surveyAuth";
   const ONE_DAY_MS  = 24 * 60 * 60 * 1000;
 
@@ -137,7 +136,8 @@
   // Handle code submission
   document.getElementById("codeSubmit").addEventListener("click", () => {
     const input = document.getElementById("accessCodeInput").value.trim();
-    if (input === ACCESS_KEY) {
+    if (input.length > 0) {
+      currentKey = input;                                // store the key for headers
       localStorage.setItem(STORAGE_KEY, Date.now().toString());
       hideLogin();
     } else {
@@ -199,6 +199,7 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
+      if (!currentKey) { alert("Please enter the daily code first."); return; }
       const payload = {
         student_number: form.student_number.value.trim(),
         satisfaction: Number(
@@ -211,7 +212,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": ACCESS_KEY
+          "x-api-key": currentKey || ""
         },
         body: JSON.stringify(payload)
       }).catch(err => console.error("Background submit failed:", err));
