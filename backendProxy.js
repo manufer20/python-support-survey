@@ -90,7 +90,7 @@ app.post('/api/survey', surveyLimiter, async (req, res) => {
     
     // Prepare payload for Azure Logic App
     const payload = {
-      student_number: "s" + validation.sanitizedData.student_number,
+      student_number: validation.sanitizedData.student_number,
       satisfaction: validation.sanitizedData.satisfaction,
       course_number: validation.sanitizedData.course_number || null,
       building_number: validation.sanitizedData.building_number || null
