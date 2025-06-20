@@ -116,11 +116,15 @@
   // === Simple daily code protection ===
   let currentKey = null;  // will store the code entered by the supporter
   const STORAGE_KEY = "surveyAuth";
-  const ONE_DAY_MS  = 24 * 60 * 60 * 1000;
 
   function isAuthValid() {
-    const ts = Number(localStorage.getItem(STORAGE_KEY));
-    return ts && Date.now() - ts < ONE_DAY_MS;
+    const ts = sessionStorage.getItem(STORAGE_KEY);
+    if (ts ===  null) {
+      return false
+    } else {
+      currentKey = Number(ts)
+      return true
+    }
   }
 
   function showLogin() {
@@ -131,14 +135,18 @@
   }
 
   // Initial auth check
-  if (!isAuthValid()) showLogin();
+  if (isAuthValid()) {
+    hideLogin();
+  } else {
+    showLogin();
+  }
 
   // Handle code submission
   document.getElementById("codeSubmit").addEventListener("click", () => {
     const input = document.getElementById("accessCodeInput").value.trim();
     if (input.length > 0) {
-      currentKey = input;                                // store the key for headers
-      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      currentKey = input;
+      sessionStorage.setItem(STORAGE_KEY, currentKey);
       hideLogin();
     } else {
       document.getElementById("loginError").classList.remove("hidden");
