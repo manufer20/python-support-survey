@@ -110,22 +110,9 @@
   </div>
 
   <script type="module">
-  // Logic App endpoint
-  const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
 
-  // === Simple daily code protection ===
-  let currentKey = null;  // will store the code entered by the supporter
-  const STORAGE_KEY = "surveyAuth";
+  const endpoint = "https://prod-149.westeurope.logic.azure.com:443/workflows/5d4cdfd91c2748449afff34157bd8379/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tM2yN2voxBg0uq1F7G4r5-i4Mxku3asseDZjrGgLqBw";
 
-  function isAuthValid() {
-    const ts = sessionStorage.getItem(STORAGE_KEY);
-    if (ts ===  null) {
-      return false
-    } else {
-      currentKey = Number(ts)
-      return true
-    }
-  }
 
   function showLogin() {
     document.getElementById("loginModal").classList.remove("hidden");
@@ -134,24 +121,9 @@
     document.getElementById("loginModal").classList.add("hidden");
   }
 
-  // Initial auth check
-  if (isAuthValid()) {
-    hideLogin();
-  } else {
-    showLogin();
-  }
+  hideLogin();
 
-  // Handle code submission
-  document.getElementById("codeSubmit").addEventListener("click", () => {
-    const input = document.getElementById("accessCodeInput").value.trim();
-    if (input.length > 0) {
-      currentKey = input;
-      sessionStorage.setItem(STORAGE_KEY, currentKey);
-      hideLogin();
-    } else {
-      document.getElementById("loginError").classList.remove("hidden");
-    }
-  });
+  
 
     // Robust CSV autocomplete loader (handles quoted line breaks and commas)
     (async () => {
@@ -223,7 +195,6 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": currentKey || ""
         },
         body: JSON.stringify(payload)
       }).catch(err => console.error("Background submit failed:", err));
@@ -239,6 +210,32 @@
     closeBtn.addEventListener('click', () => {
       modal.classList.add('hidden');
     });
+
+    // Check if student exetist in the local studnetDB.csv database
+    form.student_number.addEventListener('blur', async () => {
+      const studentNumber = form.student_number.value.trim();
+      if (studentNumber.length === 6) {
+        try {
+          const res = await fetch('./studentDB.csv');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const csv = await res.text();
+          const lines = csv.split('\n');
+          let found = false;
+          for (const line of lines) {
+            if (line.startsWith('s' + studentNumber + ',')) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            alert("Student number not found in the database.");
+            //form.student_number.value = '';
+          }
+        } catch (err) {
+          console.error('Error checking student number:', err);
+        }
+      }
+    }); 
   </script>
 </body>
 </html>
