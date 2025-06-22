@@ -116,11 +116,10 @@
     if (ts ===  null) {
       return false
     } else {
-      currentKey = Number(ts)
+      currentKey = ts; // <-- CORREGIDO: Sin Number()
       return true
     }
   }
-
   function showLogin() {
     document.getElementById("loginModal").classList.remove("hidden");
   }
