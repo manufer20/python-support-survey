@@ -200,6 +200,8 @@
         console.error('Error loading courses.csv:', err);
       }
     })();
+    
+    const buildingNumber = Number(new URLSearchParams(window.location.search).get('building')) || null;
 
     const form = document.getElementById("surveyForm");
     const modal = document.getElementById("thankYouModal");
@@ -213,7 +215,8 @@
         satisfaction: Number(
           form.querySelector('input[name="satisfaction"]:checked').value
         ),
-        course_number: form.course_number.value.trim() || null
+        course_number: form.course_number.value.trim() || null,
+        buildingNumber: buildingNumber,
       };
       modal.classList.remove('hidden');
       fetch(endpoint, {
