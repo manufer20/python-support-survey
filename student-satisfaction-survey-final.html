@@ -22,6 +22,7 @@
             id="student_number"
             name="student_number"
             type="text"
+            inputmode="numeric"
             pattern="[0-9]{6}"
             placeholder="e.g. 123456"
             class="flex-1 border border-gray-300 p-2 rounded-r"
@@ -70,6 +71,7 @@
       </div>
 
       <button
+        id="submitButton"
         type="submit"
         class="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 w-full"
       >
@@ -203,10 +205,15 @@
     const form = document.getElementById("surveyForm");
     const modal = document.getElementById("thankYouModal");
     const closeBtn = document.getElementById("closeModal");
+    const submitButton = document.getElementById("submitButton"); // Get the submit button
 
     form.addEventListener("submit", async (e) => { 
       e.preventDefault();
-      // if (!currentKey) { alert("Please enter the daily code first."); return; } // Password check commented out
+      
+      // *** NEW: Disable button to prevent double-clicks ***
+      submitButton.disabled = true;
+      submitButton.textContent = 'Submitting...';
+      submitButton.classList.add('opacity-50', 'cursor-not-allowed');
       
       const payload = {
         student_number: 's' + form.student_number.value.trim(),
@@ -222,7 +229,6 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // "x-api-key": currentKey || "" // Password header commented out
           },
           body: JSON.stringify(payload)
         });
@@ -233,7 +239,7 @@
           document.activeElement?.blur();
           setTimeout(() => {
             modal.classList.add('hidden');
-          }, 3000); // <-- CHANGED TO 3000 (3 seconds)
+          }, 3000); 
         } else {
           const errorData = await response.json(); 
           alert(`Submission Failed: ${errorData.message || 'Invalid student number provided.'}`);
@@ -241,6 +247,11 @@
       } catch (err) {
         console.error("Background submit failed:", err);
         alert("An error occurred while submitting. Please try again.");
+      } finally {
+        // *** NEW: Re-enable button after request is complete ***
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit';
+        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
       }
     });
 
