@@ -200,13 +200,14 @@
     const modal = document.getElementById("thankYouModal");
     const closeBtn = document.getElementById("closeModal");
 
-    // --- CÓDIGO ACTUALIZADO ---
-    form.addEventListener("submit", async (e) => { // 1. Añadir 'async' aquí
+    // --- SUBMIT LISTENER (UPDATED) ---
+    form.addEventListener("submit", async (e) => { 
       e.preventDefault();
       if (!currentKey) { alert("Please enter the daily code first."); return; }
       
       const payload = {
-        student_number: form.student_number.value.trim(),
+        // *** CHANGE 1: "s" is prepended here ***
+        student_number: 's' + form.student_number.value.trim(),
         satisfaction: Number(
           form.querySelector('input[name="satisfaction"]:checked').value
         ),
@@ -215,7 +216,6 @@
       };
 
       try {
-        // 2. Esperar la respuesta del servidor con 'await'
         const response = await fetch(endpoint, {
           method: "POST",
           headers: {
@@ -225,22 +225,18 @@
           body: JSON.stringify(payload)
         });
 
-        // 3. Comprobar si la respuesta del flujo fue exitosa (código 2xx)
         if (response.ok) {
-          // ÉXITO: El flujo aceptó los datos
-          modal.classList.remove('hidden'); // Mostrar "Gracias" solo si tuvo éxito
+          modal.classList.remove('hidden'); 
           form.reset();
           document.activeElement?.blur();
           setTimeout(() => {
             modal.classList.add('hidden');
           }, 1500);
         } else {
-          // FALLO: El flujo rechazó los datos
-          const errorData = await response.json(); // Obtener el mensaje de error del flujo
+          const errorData = await response.json(); 
           alert(`Submission Failed: ${errorData.message || 'Invalid student number provided.'}`);
         }
       } catch (err) {
-        // Atrapa errores de red u otros problemas
         console.error("Background submit failed:", err);
         alert("An error occurred while submitting. Please try again.");
       }
@@ -250,17 +246,30 @@
       modal.classList.add('hidden');
     });
 
-    // Check if student exetist in the database
+    // --- BLUR LISTENER (UPDATED) ---
+    // Check if student exists in the database
     form.student_number.addEventListener('blur', async () => {
       const studentNumber = form.student_number.value.trim();
       if (studentNumber.length === 6) {
         try {
-          const response = await fetch(`${endpoint}/student?student_number=${studentNumber}`, {
+          // *** CHANGE 2: "s" is prepended in the validation check URL ***
+          const studentIdWithPrefix = 's' + studentNumber;
+          // Note: Your proxy must be able to handle this GET request
+          const response = await fetch(`${endpoint}/student?student_number=${studentIdWithPrefix}`, {
             headers: { "x-api-key": currentKey || "" }
           });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          if (!response.ok) {
+            // If the student doesn't exist, Power Automate returns a 404, which is not "ok"
+            // We can parse the error message from the flow
+             const errorData = await response.json();
+             if (errorData && errorData.exists === false) {
+                 alert("Student number not found. Please check and try again.");
+             }
+             return; // Stop further processing
+          }
           const data = await response.json();
-          if (!data.exists) {
+          // This part might now be redundant if the !response.ok check works well
+          if (data && !data.exists) {
             alert("Student number not found. Please check and try again.");
           }
         } catch (error) {
