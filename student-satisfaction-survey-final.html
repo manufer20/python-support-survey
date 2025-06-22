@@ -116,7 +116,7 @@
     if (ts ===  null) {
       return false
     } else {
-      currentKey = ts; // <-- CORREGIDO: Sin Number()
+      currentKey = ts;
       return true
     }
   }
@@ -200,13 +200,11 @@
     const modal = document.getElementById("thankYouModal");
     const closeBtn = document.getElementById("closeModal");
 
-    // --- SUBMIT LISTENER (UPDATED) ---
     form.addEventListener("submit", async (e) => { 
       e.preventDefault();
       if (!currentKey) { alert("Please enter the daily code first."); return; }
       
       const payload = {
-        // *** CHANGE 1: "s" is prepended here ***
         student_number: 's' + form.student_number.value.trim(),
         satisfaction: Number(
           form.querySelector('input[name="satisfaction"]:checked').value
@@ -246,37 +244,8 @@
       modal.classList.add('hidden');
     });
 
-    // --- BLUR LISTENER (UPDATED) ---
-    // Check if student exists in the database
-    form.student_number.addEventListener('blur', async () => {
-      const studentNumber = form.student_number.value.trim();
-      if (studentNumber.length === 6) {
-        try {
-          // *** CHANGE 2: "s" is prepended in the validation check URL ***
-          const studentIdWithPrefix = 's' + studentNumber;
-          // Note: Your proxy must be able to handle this GET request
-          const response = await fetch(`${endpoint}/student?student_number=${studentIdWithPrefix}`, {
-            headers: { "x-api-key": currentKey || "" }
-          });
-          if (!response.ok) {
-            // If the student doesn't exist, Power Automate returns a 404, which is not "ok"
-            // We can parse the error message from the flow
-             const errorData = await response.json();
-             if (errorData && errorData.exists === false) {
-                 alert("Student number not found. Please check and try again.");
-             }
-             return; // Stop further processing
-          }
-          const data = await response.json();
-          // This part might now be redundant if the !response.ok check works well
-          if (data && !data.exists) {
-            alert("Student number not found. Please check and try again.");
-          }
-        } catch (error) {
-          console.error("Error checking student number:", error);
-        }
-      }
-    });
+    // *** THE 'BLUR' EVENT LISTENER HAS BEEN REMOVED TO PREVENT THE DOUBLE-FIRING ISSUE ***
+
   </script>
 </body>
 </html>
