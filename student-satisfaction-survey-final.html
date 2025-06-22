@@ -93,7 +93,8 @@
     </div>
   </div>
 
-  <!-- One‑time Daily Login Modal -->
+  <!--
+  One‑time Daily Login Modal
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
@@ -108,10 +109,13 @@
       <p id="loginError" class="text-sm text-red-600 mt-2 hidden">Incorrect code. Try again.</p>
     </div>
   </div>
+  -->
 
   <script type="module">
 
+
   const endpoint = "https://prod-149.westeurope.logic.azure.com:443/workflows/5d4cdfd91c2748449afff34157bd8379/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tM2yN2voxBg0uq1F7G4r5-i4Mxku3asseDZjrGgLqBw";
+
 
 
   function showLogin() {
@@ -181,7 +185,7 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (!currentKey) { alert("Please enter the daily code first."); return; }
+      // if (!currentKey) { alert("Please enter the daily code first."); return; }
       const payload = {
         student_number: form.student_number.value.trim(),
         satisfaction: Number(
