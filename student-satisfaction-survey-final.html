@@ -88,6 +88,8 @@
     </div>
   </div>
 
+  <!-- One‑time Daily Login Modal (COMMENTED OUT) -->
+  <!--
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
@@ -102,13 +104,14 @@
       <p id="loginError" class="text-sm text-red-600 mt-2 hidden">Incorrect code. Try again.</p>
     </div>
   </div>
+  -->
 
   <script type="module">
   // Logic App endpoint
   const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
 
-  // === Simple daily code protection ===
-  let currentKey = null;  // will store the code entered by the supporter
+  /* === PASSWORD PROTECTION (COMMENTED OUT) ===
+  let currentKey = null;
   const STORAGE_KEY = "surveyAuth";
 
   function isAuthValid() {
@@ -145,8 +148,9 @@
       document.getElementById("loginError").classList.remove("hidden");
     }
   });
+  */
 
-    // Robust CSV autocomplete loader (handles quoted line breaks and commas)
+    // Robust CSV autocomplete loader
     (async () => {
       try {
         const res = await fetch('./courses.csv');
@@ -202,7 +206,7 @@
 
     form.addEventListener("submit", async (e) => { 
       e.preventDefault();
-      if (!currentKey) { alert("Please enter the daily code first."); return; }
+      // if (!currentKey) { alert("Please enter the daily code first."); return; } // Password check commented out
       
       const payload = {
         student_number: 's' + form.student_number.value.trim(),
@@ -218,7 +222,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": currentKey || ""
+            // "x-api-key": currentKey || "" // Password header commented out
           },
           body: JSON.stringify(payload)
         });
@@ -229,7 +233,7 @@
           document.activeElement?.blur();
           setTimeout(() => {
             modal.classList.add('hidden');
-          }, 1500);
+          }, 3000); // <-- CHANGED TO 3000 (3 seconds)
         } else {
           const errorData = await response.json(); 
           alert(`Submission Failed: ${errorData.message || 'Invalid student number provided.'}`);
@@ -243,8 +247,6 @@
     closeBtn.addEventListener('click', () => {
       modal.classList.add('hidden');
     });
-
-    // *** THE 'BLUR' EVENT LISTENER HAS BEEN REMOVED TO PREVENT THE DOUBLE-FIRING ISSUE ***
 
   </script>
 </body>
