@@ -93,7 +93,8 @@
     </div>
   </div>
 
-  <!-- One‑time Daily Login Modal -->
+  <!--
+  One‑time Daily Login Modal
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
@@ -108,14 +109,16 @@
       <p id="loginError" class="text-sm text-red-600 mt-2 hidden">Incorrect code. Try again.</p>
     </div>
   </div>
+  -->
 
   <script type="module">
   // Logic App endpoint
   const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
 
+  /*
   // === Simple daily code protection ===
-  let currentKey = null;  // will store the code entered by the supporter
-  const STORAGE_KEY = "surveyAuth";
+  // let currentKey = null;  // will store the code entered by the supporter
+  // const STORAGE_KEY = "surveyAuth";
 
   function isAuthValid() {
     const ts = sessionStorage.getItem(STORAGE_KEY);
@@ -152,6 +155,7 @@
       document.getElementById("loginError").classList.remove("hidden");
     }
   });
+  */
 
     // Robust CSV autocomplete loader (handles quoted line breaks and commas)
     (async () => {
@@ -209,7 +213,7 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (!currentKey) { alert("Please enter the daily code first."); return; }
+      // if (!currentKey) { alert("Please enter the daily code first."); return; }
       const payload = {
         student_number: form.student_number.value.trim(),
         satisfaction: Number(
@@ -222,8 +226,8 @@
       fetch(endpoint, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-api-key": currentKey || ""
+          "Content-Type": "application/json"
+          // "x-api-key": currentKey || ""
         },
         body: JSON.stringify(payload)
       }).catch(err => console.error("Background submit failed:", err));
