@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="color-scheme" content="light">
   <title>Student Satisfaction Survey</title>
-  <!-- Tailwind CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 </head>
 <body class="bg-white dark:bg-white flex items-center justify-center min-h-screen">
@@ -13,7 +12,6 @@
     <h1 class="text-2xl font-bold mb-4 text-gray-700">Student Satisfaction Survey</h1>
 
     <form id="surveyForm" class="space-y-4">
-      <!-- Student Number -->
       <div>
         <label class="block text-gray-700 mb-1" for="student_number">Student Number:</label>
         <div class="flex">
@@ -32,7 +30,6 @@
         </div>
       </div>
 
-      <!-- Satisfaction 1‑5 -->
       <div>
         <span class="block text-gray-700 mb-1">Satisfaction (1 to 5):</span>
         <div class="flex justify-between">
@@ -59,7 +56,6 @@
         </div>
       </div>
 
-      <!-- Course Name or Name -->
       <div>
         <label class="block text-gray-700 mb-1" for="course_number">Course Number or Name (optional):</label>
         <input
@@ -82,7 +78,6 @@
     </form>
   </div>
 
-  <!-- Thank‑You Modal -->
   <div id="thankYouModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <h2 class="text-xl font-semibold mb-2">We value your time</h2>
@@ -93,7 +88,6 @@
     </div>
   </div>
 
-  <!-- One‑time Daily Login Modal -->
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
@@ -207,9 +201,11 @@
     const modal = document.getElementById("thankYouModal");
     const closeBtn = document.getElementById("closeModal");
 
-    form.addEventListener("submit", (e) => {
+    // --- CÓDIGO ACTUALIZADO ---
+    form.addEventListener("submit", async (e) => { // 1. Añadir 'async' aquí
       e.preventDefault();
       if (!currentKey) { alert("Please enter the daily code first."); return; }
+      
       const payload = {
         student_number: form.student_number.value.trim(),
         satisfaction: Number(
@@ -218,22 +214,37 @@
         course_number: form.course_number.value.trim() || null,
         building_Number: buildingNumber,
       };
-      modal.classList.remove('hidden');
-      fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": currentKey || ""
-        },
-        body: JSON.stringify(payload)
-      }).catch(err => console.error("Background submit failed:", err));
 
-      // Clear form and UX focus, then auto‑hide thank‑you after 1.5 s
-      form.reset();
-      document.activeElement?.blur();
-      setTimeout(() => {
-        modal.classList.add('hidden');
-      }, 1500);
+      try {
+        // 2. Esperar la respuesta del servidor con 'await'
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": currentKey || ""
+          },
+          body: JSON.stringify(payload)
+        });
+
+        // 3. Comprobar si la respuesta del flujo fue exitosa (código 2xx)
+        if (response.ok) {
+          // ÉXITO: El flujo aceptó los datos
+          modal.classList.remove('hidden'); // Mostrar "Gracias" solo si tuvo éxito
+          form.reset();
+          document.activeElement?.blur();
+          setTimeout(() => {
+            modal.classList.add('hidden');
+          }, 1500);
+        } else {
+          // FALLO: El flujo rechazó los datos
+          const errorData = await response.json(); // Obtener el mensaje de error del flujo
+          alert(`Submission Failed: ${errorData.message || 'Invalid student number provided.'}`);
+        }
+      } catch (err) {
+        // Atrapa errores de red u otros problemas
+        console.error("Background submit failed:", err);
+        alert("An error occurred while submitting. Please try again.");
+      }
     });
 
     closeBtn.addEventListener('click', () => {
