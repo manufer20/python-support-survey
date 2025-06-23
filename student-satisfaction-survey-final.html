@@ -268,6 +268,11 @@
           const errorData = await response.json(); 
           errorModal.querySelector('.error-message').textContent = errorData.message || "An error occurred while submitting your response.";
           errorModal.classList.remove('hidden');
+
+          if (!errorData.exists) {
+            form.student_number.value=''
+          }
+
         }
       } catch (err) {
         console.error("Background submit failed:", err);
