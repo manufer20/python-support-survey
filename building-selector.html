@@ -113,10 +113,15 @@
     let redirectUrl = 'student-satisfaction-survey-final.html';
 
     function redirectToBuilding(buildingNumber) {
-      const url = new URL(redirectUrl, window.location.origin);
+      const currentPath = window.location.pathname;
+      const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+      
+      const fullUrl = window.location.origin + currentDir + redirectUrl;
+      const url = new URL(fullUrl);
       url.searchParams.set('building', buildingNumber);
       window.location.href = url.toString();
     }
+
 
     function redirectToCustomBuilding() {
       const customInput = document.getElementById('customBuilding');
