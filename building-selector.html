@@ -51,46 +51,7 @@
         </div>
       </div>
     </div>
-
-    <div class="mt-6 text-center">
-      <div class="text-sm text-gray-500">
-        Redirect to: <span class="font-mono bg-gray-100 px-2 py-1 rounded">survey.html</span>
-      </div>
-      <button 
-        onclick="showUrlEditor()"
-        class="text-red-500 hover:text-red-600 text-sm mt-1 underline"
-      >
-        Change redirect URL
-      </button>
-    </div>
-  </div>
-
-  <div id="urlModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
-      <h2 class="text-xl font-semibold mb-4 text-gray-800">Change Redirect URL</h2>
-      <input
-        id="redirectUrl"
-        type="text"
-        value="survey.html"
-        class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-4"
-        placeholder="e.g. survey.html"
-      />
-      <div class="flex gap-3">
-        <button 
-          onclick="saveUrl()"
-          class="flex-1 bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600"
-        >
-          Save
-        </button>
-        <button 
-          onclick="closeUrlEditor()"
-          class="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-50"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
+</div>
 
   <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
@@ -141,23 +102,6 @@
       }
     }
 
-    function showUrlEditor() {
-      document.getElementById('urlModal').classList.remove('hidden');
-      document.getElementById('redirectUrl').focus();
-    }
-
-    function closeUrlEditor() {
-      document.getElementById('urlModal').classList.add('hidden');
-    }
-
-    function saveUrl() {
-      const newUrl = document.getElementById('redirectUrl').value.trim();
-      if (newUrl) {
-        redirectUrl = newUrl;
-        document.querySelector('.font-mono').textContent = newUrl;
-      }
-      closeUrlEditor();
-    }
 
     function showError(message) {
       document.querySelector('.error-message').textContent = message;
