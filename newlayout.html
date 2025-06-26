@@ -188,17 +188,19 @@
     </div>
 
     <!-- Analytics Page -->
-    <div id="analyticsPage" class="flex-1 p-6 hidden">
-      <div class="max-w-7xl mx-auto">
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-2">Survey Analytics</h2>
-          <p class="text-gray-600">Real-time insights from student feedback</p>
-        </div>
-
+    <div id="analyticsPage" class="flex-1 p-0 hidden">
+      <div class="h-full w-full">
         <!-- Stats Cards -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <iframe title="Python Support Statistics BACKUP" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowFullScreen="true"></iframe>
+        <div class="h-full w-full bg-white">
+          <div class="h-full w-full">
+            <iframe 
+              title="Python Support Statistics BACKUP" 
+              class="w-full h-full"
+              style="min-height: calc(100vh - 4rem);"
+              src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" 
+              frameborder="0" 
+              allowFullScreen="true">
+            </iframe>
           </div>
         </div>
       </div>  
