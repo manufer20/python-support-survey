@@ -38,8 +38,19 @@
   <!-- Sidebar overlay -->
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
+  <!-- Top bar -->
+  <header class="h-16 flex items-center px-4 shadow bg-white w-full fixed top-0 left-0 z-30">
+    <button id="openSidebar" class="text-gray-600 hover:text-gray-800 focus:outline-none mr-4">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    <h1 id="pageTitle" class="text-lg font-semibold text-gray-700">Select Building</h1>
+  </header>
+  <div class="h-16"><!-- spacer for fixed header --></div>
   <!-- Main content -->
-  <div class="flex-1 flex flex-col pointer-events-none opacity-40" id="mainWrapper">
+  <div class="flex-1 flex flex-col" id="mainWrapper">
 
     <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
@@ -238,10 +249,13 @@
 
     // === Simple supporter password ===
     const ACCESS_CODE = "Support2025";
-    const STORAGE_KEY = "surveyAuth";
+    const STORAGE_KEY = "surveyAuthDate";
 
     function isAuthValid() {
-      return sessionStorage.getItem(STORAGE_KEY) === ACCESS_CODE;
+      const saved = localStorage.getItem(STORAGE_KEY);          // "2025-06-30|Support2025"
+      const [date, code] = saved ? saved.split("|") : [];
+      const today = new Date().toISOString().slice(0,10);       // "YYYY-MM-DD"
+      return date === today && code === ACCESS_CODE;
     }
     function showLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
@@ -257,7 +271,8 @@
     document.getElementById("codeSubmit").addEventListener("click", () => {
       const input = document.getElementById("accessCodeInput").value.trim();
       if (input === ACCESS_CODE) {
-        sessionStorage.setItem(STORAGE_KEY, ACCESS_CODE);
+        const today = new Date().toISOString().slice(0,10);
+        localStorage.setItem(STORAGE_KEY, `${today}|${ACCESS_CODE}`);
         hideLogin();
         document.getElementById("loginError").classList.add("hidden");
         document.getElementById("accessCodeInput").value = "";
@@ -272,14 +287,13 @@
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const openSidebarBtn = document.getElementById('openSidebar');
+    const pageTitle       = document.getElementById('pageTitle');
     const closeSidebarBtn = document.getElementById('closeSidebar');
     const surveyTab = document.getElementById('surveyTab');
     const analyticsTab = document.getElementById('analyticsTab');
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
     const surveyPage = document.getElementById('surveyPage');
     const analyticsPage = document.getElementById('analyticsPage');
-    const pageTitle = document.getElementById('pageTitle');
-    //const selectedBuildingText = document.getElementById('selectedBuildingText');
 
     // Building selection functions
     function selectBuilding(buildingNumber) {
