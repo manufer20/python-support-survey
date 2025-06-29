@@ -39,7 +39,7 @@
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
   <!-- Main content -->
-  <div class="flex-1 flex flex-col">
+  <div class="flex-1 flex flex-col pointer-events-none opacity-40" id="mainWrapper">
 
     <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
@@ -187,6 +187,22 @@
     </div>
   </div>
 
+  <!-- Supporter Login Modal -->
+  <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
+      <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
+      <input id="accessCodeInput"
+             type="password"
+             placeholder="Enter daily code"
+             class="border border-gray-300 p-2 w-full rounded mb-4" />
+      <button id="codeSubmit"
+              class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 w-full">
+        Enter
+      </button>
+      <p id="loginError" class="text-sm text-red-600 mt-2 hidden">Incorrect code. Try again.</p>
+    </div>
+  </div>
+
   <!-- Modals -->
   <div id="thankYouModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
@@ -219,6 +235,36 @@
   <script type="module">
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
+
+    // === Simple supporter password ===
+    const ACCESS_CODE = "Support2025";
+    const STORAGE_KEY = "surveyAuth";
+
+    function isAuthValid() {
+      return sessionStorage.getItem(STORAGE_KEY) === ACCESS_CODE;
+    }
+    function showLogin() {
+      document.getElementById("loginModal").classList.remove("hidden");
+      document.getElementById("mainWrapper").classList.add("pointer-events-none","opacity-40");
+    }
+    function hideLogin() {
+      document.getElementById("loginModal").classList.add("hidden");
+      document.getElementById("mainWrapper").classList.remove("pointer-events-none","opacity-40");
+    }
+
+    if (!isAuthValid()) showLogin();
+
+    document.getElementById("codeSubmit").addEventListener("click", () => {
+      const input = document.getElementById("accessCodeInput").value.trim();
+      if (input === ACCESS_CODE) {
+        sessionStorage.setItem(STORAGE_KEY, ACCESS_CODE);
+        hideLogin();
+        document.getElementById("loginError").classList.add("hidden");
+        document.getElementById("accessCodeInput").value = "";
+      } else {
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+    });
 
     let selectedBuilding = null;
 
@@ -412,6 +458,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "x-api-key": ACCESS_CODE
           },
           body: JSON.stringify(payload)
         });
