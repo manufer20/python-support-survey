@@ -299,7 +299,11 @@
       document.getElementById("mainWrapper").classList.remove("pointer-events-none", "opacity-40");
     }
 
-    if (!isAuthValid()) showLogin();
+    if (isAuthValid()) {
+      hideLogin();               // already logged in today
+    } else {
+      showLogin();               // prompt for today's code
+    }
 
     document.getElementById("codeSubmit").addEventListener("click", async () => {
       const input = document.getElementById("accessCodeInput").value.trim();
