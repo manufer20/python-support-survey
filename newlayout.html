@@ -329,7 +329,9 @@
       }
     });
 
-    let selectedBuilding = null;
+    let selectedBuilding = localStorage.getItem('selectedBuilding')
+      ? Number(localStorage.getItem('selectedBuilding'))
+      : null;
 
     // Page elements
     const sidebar = document.getElementById('sidebar');
@@ -346,6 +348,7 @@
     // Building selection functions
     function selectBuilding(buildingNumber) {
       selectedBuilding = buildingNumber;
+      localStorage.setItem('selectedBuilding', buildingNumber);
       //selectedBuildingText.textContent = `Building ${buildingNumber}`;
       showSurveyForm();
     }
@@ -369,6 +372,7 @@
     }
 
     function showBuildingSelection() {
+      localStorage.removeItem('selectedBuilding');
       buildingSelectionPage.classList.remove('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.add('hidden');
@@ -578,8 +582,12 @@
       errorModal.classList.add('hidden');
     });
 
-    // Initialize with building selection
-    showBuildingSelection();
+    // Initialize with building selection or survey page
+    if (selectedBuilding === null) {
+      showBuildingSelection();
+    } else {
+      showSurveyForm();
+    }
   </script>
 </body>
 </html>
