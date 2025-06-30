@@ -157,6 +157,19 @@
             <datalist id="courses"></datalist>
           </div>
 
+          <!-- Workshop checkbox -->
+          <div class="flex items-center mt-4">
+            <input
+              id="workshop"
+              name="workshop"
+              type="checkbox"
+              class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"
+            />
+            <label for="workshop" class="ml-3 text-gray-700 font-medium">
+              Attended Workshop
+            </label>
+          </div>
+
           <button
             id="submitButton"
             type="submit"
@@ -455,6 +468,7 @@
         ),
         course_number: form.course_number.value.trim() || null,
         building_Number: selectedBuilding,
+        workshop: form.workshop.checked,
       };
 
       try {
