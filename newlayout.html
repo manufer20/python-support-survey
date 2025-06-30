@@ -44,7 +44,7 @@
 
     <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
-      <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8 transform md:scale-150 origin-center">
+      <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8 transform md:scale-125 origin-center">
         <h2 class="text-2xl font-bold mb-6 text-gray-700 text-center">Select Your Building</h2>
 
         <div class="space-y-4">
@@ -92,23 +92,34 @@
 
     <!-- Survey Page -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
-      <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8 transform md:scale-150 origin-center">
+      <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8 transform md:scale-125 origin-center">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
         </div>
         
 
         <form id="surveyForm" class="space-y-6">
-          <!-- Role selector -->
-          <div>
-            <div class="flex items-center gap-6">
-              <label class="inline-flex items-center text-gray-700">
-                <input type="radio" name="role" value="student" class="form-radio" checked />
-                <span class="ml-2">BSc / MSc Student</span>
-              </label>
-              <label class="inline-flex items-center text-gray-700">
-                <input type="radio" name="role" value="employee" class="form-radio" />
-                <span class="ml-2">PhD&nbsp;/&nbsp;Employee</span>
+          <!-- Role selector + Workshop -->
+          <div class="flex items-center gap-6">
+            <label class="inline-flex items-center text-gray-700">
+              <input type="radio" name="role" value="student" class="form-radio" checked />
+              <span class="ml-2">BSc / MSc Student</span>
+            </label>
+            <label class="inline-flex items-center text-gray-700">
+              <input type="radio" name="role" value="employee" class="form-radio" />
+              <span class="ml-2">PhD&nbsp;/&nbsp;Employee</span>
+            </label>
+
+            <!-- Workshop checkbox aligned to the far right -->
+            <div class="flex items-center ml-auto">
+              <input
+                id="workshop"
+                name="workshop"
+                type="checkbox"
+                class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"
+              />
+              <label for="workshop" class="ml-2 text-gray-700 font-medium whitespace-nowrap">
+                Attended&nbsp;Workshop
               </label>
             </div>
           </div>
@@ -182,18 +193,6 @@
             <datalist id="courses"></datalist>
           </div>
 
-          <!-- Workshop checkbox -->
-          <div class="flex items-center mt-4">
-            <input
-              id="workshop"
-              name="workshop"
-              type="checkbox"
-              class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"
-            />
-            <label for="workshop" class="ml-3 text-gray-700 font-medium">
-              Attended Workshop
-            </label>
-          </div>
 
           <button
             id="submitButton"
@@ -275,32 +274,49 @@
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
 
-    // === Simple supporter password ===
-    const ACCESS_CODE = "Support2025";
-    const STORAGE_KEY = "surveyAuthDate";
+    // === Supporter authentication (no hard-coded code) ===
+    const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY‑MM‑DD|key"
+
+    function getSavedKey() {
+      const saved = localStorage.getItem(STORAGE_KEY);     // "date|key" or null
+      if (!saved) return [null, null];
+      return saved.split("|");                             // [date, key]
+    }
 
     function isAuthValid() {
-      const saved = localStorage.getItem(STORAGE_KEY);          // "2025-06-30|Support2025"
-      const [date, code] = saved ? saved.split("|") : [];
-      const today = new Date().toISOString().slice(0,10);       // "YYYY-MM-DD"
-      return date === today && code === ACCESS_CODE;
+      const [date] = getSavedKey();
+      const today = new Date().toISOString().slice(0, 10); // YYYY‑MM‑DD
+      return date === today;
     }
+
     function showLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
-      document.getElementById("mainWrapper").classList.add("pointer-events-none","opacity-40");
+      document.getElementById("mainWrapper").classList.add("pointer-events-none", "opacity-40");
     }
+
     function hideLogin() {
       document.getElementById("loginModal").classList.add("hidden");
-      document.getElementById("mainWrapper").classList.remove("pointer-events-none","opacity-40");
+      document.getElementById("mainWrapper").classList.remove("pointer-events-none", "opacity-40");
     }
 
     if (!isAuthValid()) showLogin();
 
-    document.getElementById("codeSubmit").addEventListener("click", () => {
+    document.getElementById("codeSubmit").addEventListener("click", async () => {
       const input = document.getElementById("accessCodeInput").value.trim();
-      if (input === ACCESS_CODE) {
-        const today = new Date().toISOString().slice(0,10);
-        localStorage.setItem(STORAGE_KEY, `${today}|${ACCESS_CODE}`);
+
+      // quick ping to proxy – we rely on 200/401 response to verify
+      const ok = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": input,
+        },
+        body: JSON.stringify({ ping: true })
+      }).then(r => r.ok).catch(() => false);
+
+      if (ok) {
+        const today = new Date().toISOString().slice(0, 10);
+        localStorage.setItem(STORAGE_KEY, `${today}|${input}`);
         hideLogin();
         document.getElementById("loginError").classList.add("hidden");
         document.getElementById("accessCodeInput").value = "";
@@ -519,7 +535,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": ACCESS_CODE
+            "x-api-key": getSavedKey()[1] || ""
           },
           body: JSON.stringify(payload)
         });
