@@ -561,7 +561,8 @@
           errorModal.classList.remove('hidden');
 
           if (!errorData.exists) {
-            form.student_number.value = '';
+            // keep the invalid value so the student can correct it
+            form.student_number.focus();
           }
         }
       } catch (err) {
