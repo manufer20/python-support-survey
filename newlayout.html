@@ -305,7 +305,10 @@
       document.getElementById("mainWrapper").classList.remove("pointer-events-none", "opacity-40");
     }
 
-    if (isAuthValid()) {
+    const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || new URLSearchParams(window.location.search).get('token');
+    if (hasOneTimeToken) {
+      hideLogin();               // one-time link bypasses daily login
+    } else if (isAuthValid()) {
       hideLogin();               // already logged in today
     } else {
       showLogin();               // prompt for today's code
@@ -340,7 +343,7 @@
       : null;
     // Read token/building from query parameters (for one-time links)
     const urlParams = new URLSearchParams(location.search);
-    const linkToken = urlParams.get('t');
+    const linkToken = urlParams.get('t') || urlParams.get('token');
     const qpBuilding = urlParams.get('b');
     if (qpBuilding) {
       selectedBuilding = Number(qpBuilding);
@@ -431,14 +434,14 @@
       buildingSelectionPage.classList.remove('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.add('hidden');
-      pageTitle.textContent = 'Select Building';
+      if (pageTitle) pageTitle.textContent = 'Select Building';
     }
 
     function showSurveyForm() {
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.remove('hidden');
       analyticsPage.classList.add('hidden');
-      pageTitle.textContent = 'Student Satisfaction Survey';
+      if (pageTitle) pageTitle.textContent = 'Student Satisfaction Survey';
     }
 
     // Make functions global for onclick handlers
@@ -483,7 +486,7 @@
       analyticsPage.classList.remove('hidden');
       analyticsTab.classList.add('border-r-4', 'border-red-500', 'bg-gray-50');
       surveyTab.classList.remove('border-r-4', 'border-red-500', 'bg-gray-50');
-      pageTitle.textContent = 'Survey Analytics';
+      if (pageTitle) pageTitle.textContent = 'Survey Analytics';
       closeSidebar();
     }
 
@@ -595,12 +598,15 @@
       };
 
       try {
+        const headers = { "Content-Type": "application/json" };
+        if (linkToken) {
+          headers["x-token"] = linkToken;           // one-time link path
+        } else {
+          headers["x-api-key"] = getSavedKey()[1] || ""; // daily code path
+        }
         const response = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": getSavedKey()[1] || ""
-          },
+          headers,
           body: JSON.stringify(payload)
         });
         
@@ -640,7 +646,10 @@
     });
 
     // Initialize with building selection or survey page
-    if (selectedBuilding === null) {
+    if (linkToken) {
+      // one-time invite: skip building selection (backend injects building if needed)
+      showSurveyForm();
+    } else if (selectedBuilding === null) {
       showBuildingSelection();
     } else {
       showSurveyForm();
