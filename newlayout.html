@@ -617,13 +617,30 @@
             thankYouModal.classList.add('hidden');
           }, 3000); 
         } else {
-          const errorData = await response.json(); 
-          errorModal.querySelector('.error-message').textContent = errorData.message || "An error occurred while submitting your response.";
+          let message = "An error occurred while submitting your response.";
+          try {
+            const ct = (response.headers.get('Content-Type') || '').toLowerCase();
+            if (ct.includes('application/json')) {
+              const j = await response.json();
+              message = j?.message
+                        || (typeof j === 'string' ? j : JSON.stringify(j));
+            } else {
+              const t = await response.text();
+              if (t && t.trim().length) message = t.trim();
+            }
+          } catch (parseErr) {
+            // ignore, we'll show the default message
+            console.warn('Could not parse error body', parseErr);
+          }
+
+          errorModal.querySelector('.error-message').textContent = message;
           errorModal.classList.remove('hidden');
 
-          if (!errorData.exists) {
-            // keep the invalid value so the student can correct it
+          // Keep typed value so the user can correct it
+          if (form.role.value === 'student') {
             form.student_number.focus();
+          } else {
+            form.dtu_username?.focus();
           }
         }
       } catch (err) {
