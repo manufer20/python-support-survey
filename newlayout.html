@@ -45,7 +45,12 @@
     <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8 transform md:scale-110 origin-center">
-        <h2 class="text-2xl font-bold mb-6 text-gray-700 text-center">Select Your Building</h2>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-700">Select Your Building</h2>
+          <button id="btnGenerateLink" type="button" class="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">
+            Generate one-time link
+          </button>
+        </div>
 
         <div class="space-y-4">
           <button 
@@ -273,6 +278,7 @@
   <script type="module">
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
+    const tokenEndpoint = "https://python-support-proxy.azurewebsites.net/api/issueToken"; // creates single-use token
 
     // === Supporter authentication (no hard-coded code) ===
     const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY‑MM‑DD|key"
@@ -332,6 +338,14 @@
     let selectedBuilding = localStorage.getItem('selectedBuilding')
       ? Number(localStorage.getItem('selectedBuilding'))
       : null;
+    // Read token/building from query parameters (for one-time links)
+    const urlParams = new URLSearchParams(location.search);
+    const linkToken = urlParams.get('t');
+    const qpBuilding = urlParams.get('b');
+    if (qpBuilding) {
+      selectedBuilding = Number(qpBuilding);
+      localStorage.setItem('selectedBuilding', selectedBuilding);
+    }
 
     // Page elements
     const sidebar = document.getElementById('sidebar');
@@ -344,6 +358,47 @@
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
     const surveyPage = document.getElementById('surveyPage');
     const analyticsPage = document.getElementById('analyticsPage');
+
+    // Generate a one-time survey link (for sending via Discord)
+    async function generateOneTimeLink() {
+      try {
+        if (selectedBuilding === null) {
+          showError('Select a building first to embed in the link.');
+          return;
+        }
+        const expiresHours = 24; // default token lifetime
+        const resp = await fetch(tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': getSavedKey()[1] || ''
+          },
+          body: JSON.stringify({ expiresHours, building_Number: selectedBuilding })
+        });
+
+        if (!resp.ok) {
+          const txt = await resp.text().catch(()=>'');
+          showError('Could not generate link. ' + (txt || ''));
+          return;
+        }
+
+        const data = await resp.json().catch(()=>({}));
+        const baseUrl = window.location.origin + window.location.pathname;
+        const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}&b=${encodeURIComponent(String(selectedBuilding))}`;
+
+        try { await navigator.clipboard.writeText(url); } catch {}
+        alert('One-time survey link copied to clipboard:\n' + url);
+      } catch (e) {
+        console.error(e);
+        showError('Unexpected error while generating the link.');
+      }
+    }
+
+    // Wire the button once DOM is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('btnGenerateLink');
+      if (btn) btn.addEventListener('click', generateOneTimeLink);
+    });
 
     // Building selection functions
     function selectBuilding(buildingNumber) {
@@ -536,6 +591,7 @@
         course_number: form.course_number.value.trim() || null,
         building_Number: selectedBuilding,
         workshop: form.workshop.checked,
+        token: linkToken || null,
       };
 
       try {
