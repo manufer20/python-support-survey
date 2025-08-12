@@ -365,18 +365,16 @@
     // Generate a one-time survey link (for sending via Discord)
     async function generateOneTimeLink() {
       try {
-        if (selectedBuilding === null) {
-          showError('Select a building first to embed in the link.');
-          return;
-        }
         const expiresHours = 24; // default token lifetime
+        const buildingPayload = (selectedBuilding === null) ? 'Online' : selectedBuilding;
+
         const resp = await fetch(tokenEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-api-key': getSavedKey()[1] || ''
           },
-          body: JSON.stringify({ expiresHours, building_Number: selectedBuilding })
+          body: JSON.stringify({ expiresHours, building_Number: buildingPayload })
         });
 
         if (!resp.ok) {
@@ -387,7 +385,8 @@
 
         const data = await resp.json().catch(()=>({}));
         const baseUrl = window.location.origin + window.location.pathname;
-        const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}&b=${encodeURIComponent(String(selectedBuilding))}`;
+        const addB = (selectedBuilding !== null);
+        const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}${addB ? `&b=${encodeURIComponent(String(selectedBuilding))}` : ''}`;
 
         try { await navigator.clipboard.writeText(url); } catch {}
         alert('One-time survey link copied to clipboard:\n' + url);
