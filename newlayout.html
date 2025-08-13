@@ -635,7 +635,14 @@
         
         if (response.ok) {
           thankYouModal.classList.remove('hidden'); 
+
+          // Reset and force UI back to student view with the 's' prefix field visible
           form.reset();
+          form.role.value = 'student';
+          toggleRole();
+          document.getElementById('student_number').value = '';
+          document.getElementById('student_number').focus();
+
           document.activeElement?.blur();
           setTimeout(() => {
             thankYouModal.classList.add('hidden');
@@ -653,7 +660,6 @@
               if (t && t.trim().length) message = t.trim();
             }
           } catch (parseErr) {
-            // ignore, we'll show the default message
             console.warn('Could not parse error body', parseErr);
           }
 
@@ -686,6 +692,7 @@
     });
 
     // Initialize with building selection or survey page
+    const linkToken = urlParams.get('t') || urlParams.get('token');
     if (linkToken) {
       // one-time invite: skip building selection (backend injects building if needed)
       showSurveyForm();
