@@ -547,9 +547,15 @@
       let title = "We couldn't submit your response";
       let message = 'Please try again in a moment.';
 
+      const roleNow = (document.querySelector('input[name="role"]:checked')?.value || 'student');
       if (l.includes('study number does not exist') || l.includes('student number does not exist')) {
-        title = 'Student number not found';
-        message = "We couldn't find that student number. Please check the six digits after 's' on your DTU ID and try again.";
+        if (roleNow === 'employee') {
+          title = 'DTU username not found';
+          message = "We couldn't find that DTU username. Please enter your DTU credentials (letters only, e.g. 'manufer') and try again.";
+        } else {
+          title = 'Student number not found';
+          message = "We couldn't find that student number. Please check the six digits after 's' on your DTU ID (e.g. s123456) and try again.";
+        }
       } else if (l.includes('invalid or used token') || l.includes('token expired') || (status === 401 && usingToken)) {
         title = 'Link expired';
         message = 'This one-time link has already been used or has expired. Please ask your supporter for a new link.';
