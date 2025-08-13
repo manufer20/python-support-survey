@@ -244,8 +244,9 @@
 
       <div class="flex items-center gap-2 mb-4">
         <button id="qrCreate" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Create QR</button>
-        <button id="qrClose" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
+        <button id="qrClose" type="button" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
       </div>
+      <p id="qrError" class="text-red-600 text-sm mb-3 hidden"></p>
 
       <div id="qrResult" class="hidden">
         <canvas id="qrCanvas" class="mx-auto mb-3"></canvas>
@@ -407,7 +408,18 @@
       const qrBuildingInp = document.getElementById('qrBuilding');
       const qrWorkshopDay = document.getElementById('qrWorkshopDay');
 
+      function showQrError(msg) {
+        const el = document.getElementById('qrError');
+        if (!el) return;
+        el.textContent = typeof msg === 'string' ? msg : 'An unexpected error occurred.';
+        el.classList.remove('hidden');
+      }
+      function clearQrError() {
+        const el = document.getElementById('qrError');
+        if (el) { el.textContent = ''; el.classList.add('hidden'); }
+      }
       function openQrModal() {
+        clearQrError();
         if (selectedBuilding !== null && !isNaN(selectedBuilding)) {
           qrBuildingInp.value = String(selectedBuilding);
         } else {
@@ -432,7 +444,7 @@
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
         if (bVal === '' || isNaN(bNum) || bNum < 0 || bNum > 990) {
-          showError('Please enter a valid building between 000 and 990 or use a quick option.');
+          showQrError('Please enter a valid building between 000 and 990 or use a quick option.');
           return;
         }
         try {
@@ -447,7 +459,7 @@
           });
           if (!resp.ok) {
             const txt = await resp.text().catch(()=> '');
-            showError('Could not generate link. ' + (txt || ''), resp.status);
+            showQrError('Could not generate link. ' + (txt || ''));
             return;
           }
           const data = await resp.json();
@@ -477,7 +489,7 @@
           qrResult.classList.remove('hidden');
         } catch (e) {
           console.error(e);
-          showError('Unexpected error while generating the QR.');
+          showQrError('Unexpected error while generating the QR.');
         }
       }
 
@@ -486,6 +498,16 @@
       }
       qrCreate.addEventListener('click', createQr);
       qrClose.addEventListener('click', closeQrModal);
+      // Close when clicking the dimmed backdrop
+      qrModal.addEventListener('click', (ev) => {
+        if (ev.target === qrModal) closeQrModal();
+      });
+      // Close on Escape key
+      window.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && !qrModal.classList.contains('hidden')) {
+          closeQrModal();
+        }
+      });
       qrCopy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
@@ -744,6 +766,9 @@
           form.reset();
           form.role.value = 'student';
           toggleRole();
+          // Ensure we remain on the survey page (no navigation back to building selection)
+          surveyPage.classList.remove('hidden');
+          buildingSelectionPage.classList.add('hidden');
           document.getElementById('student_number').value = '';
           document.getElementById('student_number').focus();
           document.activeElement?.blur();
