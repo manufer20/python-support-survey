@@ -243,7 +243,7 @@
       </div>
 
       <div class="flex items-center gap-2 mb-4">
-        <button id="qrCreate" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Create QR</button>
+        <button id="qrCreate" type="button" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Create QR</button>
         <button id="qrClose" type="button" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
       </div>
       <p id="qrError" class="text-red-600 text-sm mb-3 hidden"></p>
@@ -253,7 +253,7 @@
         <img id="qrImg" class="mx-auto mb-3 hidden" alt="QR code"/>
         <div class="flex items-center gap-2">
           <input id="qrLink" type="text" readonly class="flex-1 border border-gray-300 p-2 rounded text-xs" />
-          <button id="qrCopy" class="bg-gray-100 border px-3 py-2 rounded hover:bg-gray-200 text-sm">Copy</button>
+          <button id="qrCopy" type="button" class="bg-gray-100 border px-3 py-2 rounded hover:bg-gray-200 text-sm">Copy</button>
         </div>
       </div>
     </div>
@@ -496,7 +496,7 @@
       if (document.getElementById('btnGenerateQR')) {
         document.getElementById('btnGenerateQR').addEventListener('click', openQrModal);
       }
-      qrCreate.addEventListener('click', createQr);
+      qrCreate.addEventListener('click', (ev) => { ev.preventDefault(); createQr(); });
       qrClose.addEventListener('click', closeQrModal);
       // Close when clicking the dimmed backdrop
       qrModal.addEventListener('click', (ev) => {
@@ -508,7 +508,8 @@
           closeQrModal();
         }
       });
-      qrCopy.addEventListener('click', async () => {
+      qrCopy.addEventListener('click', async (ev) => {
+        ev.preventDefault();
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
     });
@@ -769,6 +770,8 @@
           // Ensure we remain on the survey page (no navigation back to building selection)
           surveyPage.classList.remove('hidden');
           buildingSelectionPage.classList.add('hidden');
+          // Guard against accidental navigation back
+          window.history.replaceState({}, '', window.location.pathname + window.location.search);
           document.getElementById('student_number').value = '';
           document.getElementById('student_number').focus();
           document.activeElement?.blur();
