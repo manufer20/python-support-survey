@@ -32,6 +32,12 @@
         </svg>
         Analytics
       </a>
+      <a href="#" id="resetTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-5.292M20 14a8 8 0 01-14 5.292"/>
+        </svg>
+        Reset / Logout
+      </a>
     </nav>
   </div>
 
@@ -290,6 +296,22 @@
     // === Supporter authentication (no hard-coded code) ===
     const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY-MM-DD|key"
 
+    // --- Reset via URL (_reset.html, ?reset=1, or #reset) ---
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const isReset = /_reset(?:\.html)?$/.test(location.pathname)
+                   || params.get('reset') === '1'
+                   || params.get('reset') === 'true'
+                   || location.hash === '#reset';
+      if (isReset) {
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        try { localStorage.removeItem('selectedBuilding'); } catch {}
+        // Redirect to the base page without the reset markers
+        const cleanPath = location.pathname.replace('_reset', '');
+        location.replace(cleanPath);
+      }
+    })();
+
     function getSavedKey() {
       const saved = localStorage.getItem(STORAGE_KEY);     // "date|key" or null
       if (!saved) return [null, null];
@@ -367,6 +389,7 @@
     const closeSidebarBtn = document.getElementById('closeSidebar');
     const surveyTab = document.getElementById('surveyTab');
     const analyticsTab = document.getElementById('analyticsTab');
+    const resetTab = document.getElementById('resetTab');
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
     const surveyPage = document.getElementById('surveyPage');
     const analyticsPage = document.getElementById('analyticsPage');
@@ -473,6 +496,16 @@
     window.handleEnterKey = handleEnterKey;
     window.showBuildingSelection = showBuildingSelection;
 
+    function doReset() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      try { localStorage.removeItem('selectedBuilding'); } catch {}
+      // Remove any token query from the URL and return to the selector/login
+      const cleanUrl = location.origin + location.pathname.replace('_reset', '');
+      history.replaceState(null, '', cleanUrl);
+      showBuildingSelection();
+      showLogin();
+    }
+
     // Sidebar functionality
     function openSidebar() {
       sidebar.classList.remove('-translate-x-full');
@@ -522,6 +555,12 @@
       e.preventDefault();
       switchToAnalytics();
     });
+    if (resetTab) {
+      resetTab.addEventListener('click', (e) => {
+        e.preventDefault();
+        doReset();
+      });
+    }
 
     // Error handling
     function showError(message) {
