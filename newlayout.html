@@ -62,6 +62,9 @@
             <button id="btnGenerateLink" type="button" class="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">
               Generate one-time link
             </button>
+            <button id="btnGenerateQR" type="button" class="text-sm bg-white border border-red-500 text-red-600 px-3 py-2 rounded hover:bg-red-50">
+              Generate QR
+            </button>
           </div>
         </div>
 
@@ -287,6 +290,46 @@
     </div>
   </div>
 
+  <!-- QR Modal -->
+  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Generate QR for Building</h3>
+
+      <div class="space-y-3 mb-4">
+        <p class="text-sm text-gray-600">Quick select:</p>
+        <div class="flex gap-2">
+          <button type="button" class="qr-quick btn-302 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded border" data-building="302">302</button>
+          <button type="button" class="qr-quick btn-358 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded border" data-building="358">358</button>
+          <button type="button" class="qr-quick btn-324 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded border" data-building="324">324</button>
+        </div>
+
+        <div>
+          <label for="qrBuilding" class="block text-sm text-gray-700 mb-1">Or enter any building (000–990):</label>
+          <input id="qrBuilding" type="number" min="0" max="990" placeholder="e.g. 324" class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
+        </div>
+
+        <label class="inline-flex items-center text-gray-700">
+          <input id="qrWorkshopDay" type="checkbox" class="h-4 w-4 text-red-500 border-gray-300 rounded">
+          <span class="ml-2">Preselect Workshop</span>
+        </label>
+      </div>
+
+      <div class="flex items-center gap-2 mb-4">
+        <button id="qrCreate" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Create QR</button>
+        <button id="qrClose" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
+      </div>
+
+      <div id="qrResult" class="hidden">
+        <canvas id="qrCanvas" class="mx-auto mb-3"></canvas>
+        <div class="flex items-center gap-2">
+          <input id="qrLink" type="text" readonly class="flex-1 border border-gray-300 p-2 rounded text-xs" />
+          <button id="qrCopy" class="bg-gray-100 border px-3 py-2 rounded hover:bg-gray-200 text-sm">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script type="module">
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
@@ -442,6 +485,95 @@
           localStorage.setItem(WORKSHOP_DAY_KEY, String(wdToggle.checked));
         });
       }
+
+      // === QR Generation ===
+      const qrModal   = document.getElementById('qrModal');
+      const qrCreate  = document.getElementById('qrCreate');
+      const qrClose   = document.getElementById('qrClose');
+      const qrCopy    = document.getElementById('qrCopy');
+      const qrCanvas  = document.getElementById('qrCanvas');
+      const qrLinkInp = document.getElementById('qrLink');
+      const qrResult  = document.getElementById('qrResult');
+      const qrBuildingInp = document.getElementById('qrBuilding');
+      const qrWorkshopDay = document.getElementById('qrWorkshopDay');
+
+      function openQrModal() {
+        // Prefill with currently selected building if any
+        if (selectedBuilding !== null && !isNaN(selectedBuilding)) {
+          qrBuildingInp.value = String(selectedBuilding);
+        } else {
+          qrBuildingInp.value = '';
+        }
+        // Prefill workshop with the saved toggle
+        qrWorkshopDay.checked = (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+        qrResult.classList.add('hidden');
+        qrModal.classList.remove('hidden');
+      }
+      function closeQrModal() {
+        qrModal.classList.add('hidden');
+      }
+
+      // Quick-select buttons
+      qrModal.querySelectorAll('.qr-quick').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const v = btn.getAttribute('data-building');
+          qrBuildingInp.value = v;
+        });
+      });
+
+      async function createQr() {
+        // Validate building 0..990
+        const bVal = qrBuildingInp.value.trim();
+        const bNum = Number(bVal);
+        if (bVal === '' || isNaN(bNum) || bNum < 0 || bNum > 990) {
+          showError('Please enter a valid building between 000 and 990 or use a quick option.');
+          return;
+        }
+        // Call token endpoint with chosen building
+        try {
+          const expiresHours = 24;
+          const resp = await fetch(tokenEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': getSavedKey()[1] || ''
+            },
+            body: JSON.stringify({ expiresHours, building_Number: bNum })
+          });
+          if (!resp.ok) {
+            const txt = await resp.text().catch(()=> '');
+            showError('Could not generate link. ' + (txt || ''));
+            return;
+          }
+          const data = await resp.json();
+          const baseUrl = window.location.origin + window.location.pathname;
+          const wd = qrWorkshopDay.checked ? '&wd=1' : '';
+          const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}&b=${encodeURIComponent(String(bNum))}${wd}`;
+
+          // Render QR
+          if (window.QRCode) {
+            // Clear previous
+            const ctx = qrCanvas.getContext('2d');
+            ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+            await QRCode.toCanvas(qrCanvas, url, { width: 280, margin: 2 });
+          }
+          qrLinkInp.value = url;
+          qrResult.classList.remove('hidden');
+        } catch (e) {
+          console.error(e);
+          showError('Unexpected error while generating the QR.');
+        }
+      }
+
+      if (document.getElementById('btnGenerateQR')) {
+        document.getElementById('btnGenerateQR').addEventListener('click', openQrModal);
+      }
+      qrCreate.addEventListener('click', createQr);
+      qrClose.addEventListener('click', closeQrModal);
+      qrCopy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
+      });
+      // === End QR Generation ===
     });
 
     // Building selection functions
