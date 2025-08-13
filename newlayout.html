@@ -474,7 +474,7 @@
     }
 
     // Wire the button & restore toggle once DOM is ready
-    window.addEventListener('DOMContentLoaded', () => {
+    (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
       const btn = document.getElementById('btnGenerateLink');
       if (btn) btn.addEventListener('click', generateOneTimeLink);
 
@@ -551,14 +551,15 @@
           const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}&b=${encodeURIComponent(String(bNum))}${wd}`;
 
           // Render QR
-          if (window.QRCode) {
-            // Clear previous
+          if (window.QRCode && QRCode.toCanvas) {
             const ctx = qrCanvas.getContext('2d');
             ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
             await QRCode.toCanvas(qrCanvas, url, { width: 280, margin: 2 });
+            qrLinkInp.value = url;
+            qrResult.classList.remove('hidden');
+          } else {
+            showError('QR generator failed to load. Please check network access to cdn.jsdelivr.net and try again.');
           }
-          qrLinkInp.value = url;
-          qrResult.classList.remove('hidden');
         } catch (e) {
           console.error(e);
           showError('Unexpected error while generating the QR.');
