@@ -212,7 +212,8 @@
       <div class="flex justify-center mb-3">
         <svg class="w-16 h-16 text-red-600" fill="currentColor" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 511.999 463.377"><path d="M289.639 9.137c12.411 7.25 23.763 18.883 33.037 34.913l.97 1.813 1.118 1.941 174.174 302.48c33.712 56.407-1.203 113.774-66.174 112.973v.12H73.485c-.895 0-1.78-.04-2.657-.112-59.104-.799-86.277-54.995-61.909-106.852.842-1.805 1.816-3.475 2.816-5.201L189.482 43.959l-.053-.032c9.22-15.786 20.717-27.457 33.411-34.805C243.788-3 268.711-3.086 289.639 9.137zM255.7 339.203c13.04 0 23.612 10.571 23.612 23.612 0 13.041-10.572 23.613-23.612 23.613-13.041 0-23.613-10.572-23.613-23.613s10.572-23.612 23.613-23.612zm17.639-35.379c-.794 19.906-34.506 19.931-35.278-.006-3.41-34.108-12.129-111.541-11.853-143.591.284-9.874 8.469-15.724 18.939-17.955 3.231-.686 6.781-1.024 10.357-1.019 3.595.008 7.153.362 10.387 1.051 10.818 2.303 19.309 8.392 19.309 18.446l-.043 1.005-11.818 142.069z"/></svg>
       </div>
-      <h2 class="text-xl font-semibold mb-2 text-gray-800">Submission Failed</h2>
+      <!-- Updated, now we set this dynamically -->
+      <h2 id="errorTitle" class="text-xl font-semibold mb-2 text-gray-800">We couldn't submit your response</h2>
       <p class="error-message mb-4 text-gray-600">An error occurred while submitting your response.</p>
       <button id="closeErrorModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600">Try Again</button>
     </div>
@@ -249,7 +250,7 @@
 
       <div id="qrResult" class="hidden">
         <canvas id="qrCanvas" class="mx-auto mb-3"></canvas>
-        <!-- NEW: <img> fallback when JS library is blocked -->
+        <!-- <img> fallback when JS library is blocked -->
         <img id="qrImg" class="mx-auto mb-3 hidden" alt="QR code"/>
         <div class="flex items-center gap-2">
           <input id="qrLink" type="text" readonly class="flex-1 border border-gray-300 p-2 rounded text-xs" />
@@ -365,8 +366,8 @@
         });
 
         if (!resp.ok) {
-          const txt = await resp.text().catch(()=>'');
-          showError('Could not generate link. ' + (txt || ''));
+          const txt = await resp.text().catch(()=> '');
+          showError('Could not generate link. ' + (txt || ''), resp.status);
           return;
         }
 
@@ -384,7 +385,7 @@
       }
     }
 
-    // Wire the button & restore toggle once DOM is ready
+    // === QR Generation (kept, uses showError for friendly messages) ===
     (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
       const btn = document.getElementById('btnGenerateLink');
       if (btn) btn.addEventListener('click', generateOneTimeLink);
@@ -397,13 +398,12 @@
         });
       }
 
-      // === QR Generation ===
       const qrModal   = document.getElementById('qrModal');
       const qrCreate  = document.getElementById('qrCreate');
       const qrClose   = document.getElementById('qrClose');
       const qrCopy    = document.getElementById('qrCopy');
       const qrCanvas  = document.getElementById('qrCanvas');
-      const qrImg     = document.getElementById('qrImg');     // NEW
+      const qrImg     = document.getElementById('qrImg');
       const qrLinkInp = document.getElementById('qrLink');
       const qrResult  = document.getElementById('qrResult');
       const qrBuildingInp = document.getElementById('qrBuilding');
@@ -416,7 +416,6 @@
           qrBuildingInp.value = '';
         }
         qrWorkshopDay.checked = (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
-        // Reset UI each time modal opens
         if (qrImg) { qrImg.src = ''; qrImg.classList.add('hidden'); }
         qrCanvas.classList.remove('hidden');
         qrResult.classList.add('hidden');
@@ -424,7 +423,6 @@
       }
       function closeQrModal() { qrModal.classList.add('hidden'); }
 
-      // Quick-select buttons
       qrModal.querySelectorAll('.qr-quick').forEach(btn => {
         btn.addEventListener('click', () => {
           const v = btn.getAttribute('data-building');
@@ -451,7 +449,7 @@
           });
           if (!resp.ok) {
             const txt = await resp.text().catch(()=> '');
-            showError('Could not generate link. ' + (txt || ''));
+            showError('Could not generate link. ' + (txt || ''), resp.status);
             return;
           }
           const data = await resp.json();
@@ -472,9 +470,7 @@
             const encoded = encodeURIComponent(url);
             qrCanvas.classList.add('hidden');
             qrImg.classList.remove('hidden');
-            // Primary image service
             qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encoded}`;
-            // Fallback if that is blocked too
             qrImg.onerror = function () {
               qrImg.onerror = null;
               qrImg.src = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encoded}`;
@@ -495,7 +491,6 @@
       qrCopy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
-      // === End QR Generation ===
     });
 
     // Building selection functions
@@ -535,7 +530,6 @@
     window.handleEnterKey = handleEnterKey;
     window.showBuildingSelection = showBuildingSelection;
 
-
     if (resetTab) {
       resetTab.addEventListener('click', (e) => {
         e.preventDefault();
@@ -546,10 +540,60 @@
       });
     }
 
-    function showError(message) {
+    /* ---------- Friendly error handling & modal ---------- */
+    function friendlyError(raw, status = 0, usingToken = false) {
+      const text = (typeof raw === 'string') ? raw : (raw?.message || '');
+      const l = (text || '').toLowerCase();
+      let title = "We couldn't submit your response";
+      let message = 'Please try again in a moment.';
+
+      if (l.includes('study number does not exist') || l.includes('student number does not exist')) {
+        title = 'Student number not found';
+        message = "We couldn't find that student number. Please check the six digits after 's' on your DTU ID and try again.";
+      } else if (l.includes('invalid or used token') || l.includes('token expired') || (status === 401 && usingToken)) {
+        title = 'Link expired';
+        message = 'This one-time link has already been used or has expired. Please ask your supporter for a new link.';
+      } else if (l.includes('unauthorized')) {
+        title = 'Not authorised';
+        message = 'Your session has expired. Please refresh and try again.';
+      } else if (l.includes('triggerinputschemamismatch') || l.includes('invalid type') || l.includes('schema')) {
+        title = 'Form not recognised';
+        message = 'Some information was in the wrong format. Please refresh the page and try again.';
+      } else if (status >= 500) {
+        title = 'Service temporarily unavailable';
+        message = 'We are experiencing a temporary problem. Please try again in a minute.';
+      } else if (status === 429) {
+        title = 'Too many attempts';
+        message = 'Please wait a moment and try again.';
+      } else if (l.includes('could not generate link')) {
+        title = 'Could not generate link';
+        message = 'Please confirm you are signed in and try again.';
+      } else if (l.includes('qr generator failed')) {
+        title = 'QR generator unavailable';
+        message = 'Network access to the QR service is blocked. Try again or use the copy-link option.';
+      } else if (text && text.trim()) {
+        try {
+          const maybe = JSON.parse(text);
+          if (maybe && typeof maybe.message === 'string') {
+            message = maybe.message;
+          } else {
+            message = text;
+          }
+        } catch { message = text; }
+      }
+      return { title, message };
+    }
+
+    function showError(input, status) {
+      const { title, message } = (typeof input === 'string')
+        ? friendlyError(input, status, !!linkToken)
+        : (input && typeof input === 'object') ? input : friendlyError('', status, !!linkToken);
+      const titleEl = document.getElementById('errorTitle');
+      if (titleEl) titleEl.textContent = title;
       document.querySelector('.error-message').textContent = message;
       document.getElementById('errorModal').classList.remove('hidden');
     }
+    /* ---------------------------------------------------- */
 
     // CSV autocomplete loader (unchanged)
     (async () => {
@@ -584,7 +628,7 @@
       } catch (err) { console.error('Error loading courses.csv:', err); }
     })();
 
-    // Form handling (unchanged except final reset to student view)
+    // Form handling
     const form = document.getElementById("surveyForm");
     const roleInputs      = form.querySelectorAll('input[name="role"]');
     const studentWrapper  = document.getElementById('studentWrapper');
@@ -639,24 +683,23 @@
           document.activeElement?.blur();
           setTimeout(() => { thankYouModal.classList.add('hidden'); }, 3000); 
         } else {
-          let message = "An error occurred while submitting your response.";
+          let raw = '';
           try {
             const ct = (response.headers.get('Content-Type') || '').toLowerCase();
             if (ct.includes('application/json')) {
               const j = await response.json();
-              message = j?.message || (typeof j === 'string' ? j : JSON.stringify(j));
+              raw = j?.message || (typeof j === 'string' ? j : JSON.stringify(j));
             } else {
               const t = await response.text();
-              if (t && t.trim().length) message = t.trim();
+              if (t && t.trim().length) raw = t.trim();
             }
           } catch {}
-          errorModal.querySelector('.error-message').textContent = message;
-          errorModal.classList.remove('hidden');
+          showError(friendlyError(raw, response.status, !!linkToken), response.status);
           if (form.role.value === 'student') { form.student_number.focus(); } else { form.dtu_username?.focus(); }
         }
       } catch (err) {
         console.error("Background submit failed:", err);
-        errorModal.classList.remove('hidden');
+        showError('A network error occurred. Please check your connection and try again.');
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = 'Submit Survey';
