@@ -53,7 +53,6 @@
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Select Your Building</h2>
-          <!-- RIGHT SIDE: Workshop Day toggle + Link button -->
           <div class="flex items-center gap-4">
             <label class="inline-flex items-center text-gray-700">
               <input id="workshopDayToggle" type="checkbox" class="h-5 w-5 text-red-500 border-gray-300 rounded">
@@ -69,18 +68,12 @@
         </div>
 
         <div class="space-y-4">
-          <button 
-            onclick="selectBuilding(302)"
-            class="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left"
-          >
+          <button onclick="selectBuilding(302)" class="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left">
             <div class="font-semibold text-gray-700">Building 302</div>
             <div class="text-sm text-gray-500">Main Python Support Office</div>
           </button>
           
-          <button 
-            onclick="selectBuilding(358)"
-            class="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left"
-          >
+          <button onclick="selectBuilding(358)" class="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left">
             <div class="font-semibold text-gray-700">Building 358</div>
             <div class="text-sm text-gray-500">Secondary Python Support Office</div>
           </button>
@@ -99,10 +92,7 @@
                 class="flex-1 border border-gray-300 p-2 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 onkeypress="handleEnterKey(event)"
               />
-              <button
-                onclick="selectCustomBuilding()"
-                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-              >
+              <button onclick="selectCustomBuilding()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">
                 Select
               </button>
             </div>
@@ -118,7 +108,6 @@
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
         </div>
         
-
         <form id="surveyForm" class="space-y-6">
           <!-- Role selector + Workshop -->
           <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
@@ -131,48 +120,23 @@
               <span class="ml-2">PhD&nbsp;/&nbsp;Employee</span>
             </label>
 
-            <!-- Workshop checkbox aligned to the far right -->
             <div class="flex items-center sm:ml-auto">
-              <input
-                id="workshop"
-                name="workshop"
-                type="checkbox"
-                class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"
-              />
-              <label for="workshop" class="ml-2 text-gray-700 font-medium whitespace-nowrap">
-                Attended&nbsp;Workshop
-              </label>
+              <input id="workshop" name="workshop" type="checkbox" class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"/>
+              <label for="workshop" class="ml-2 text-gray-700 font-medium whitespace-nowrap">Attended&nbsp;Workshop</label>
             </div>
           </div>
+
           <div id="studentWrapper">
             <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
             <div class="flex">
-              <span class="inline-flex items-center px-3 text-gray-700 bg-gray-200 border border-r-0 border-gray-300 rounded-l">
-                s
-              </span>
-              <input
-                id="student_number"
-                name="student_number"
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]{6}"
-                placeholder="e.g. 123456"
-                class="flex-1 border border-gray-300 p-2 sm:p-3 rounded-r focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                required
-              />
+              <span class="inline-flex items-center px-3 text-gray-700 bg-gray-200 border border-r-0 border-gray-300 rounded-l">s</span>
+              <input id="student_number" name="student_number" type="text" inputmode="numeric" pattern="[0-9]{6}" placeholder="e.g. 123456" class="flex-1 border border-gray-300 p-2 sm:p-3 rounded-r focus:ring-2 focus:ring-red-500 focus:border-red-500" required/>
             </div>
           </div>
-          <!-- DTU username -->
+
           <div id="usernameWrapper" class="hidden">
             <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
-            <input
-              id="dtu_username"
-              name="dtu_username"
-              type="text"
-              pattern="[A-Za-z]{3,20}"
-              placeholder="e.g. manufer"
-              class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            />
+            <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
           </div>
 
           <div>
@@ -203,23 +167,11 @@
 
           <div>
             <label class="block text-gray-700 mb-2 font-medium" for="course_number">Course Number or Name (optional):</label>
-            <input
-              id="course_number"
-              name="course_number"
-              list="courses"
-              type="text"
-              placeholder="e.g. 01003 - Mathematics 1a"
-              class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            />
+            <input id="course_number" name="course_number" list="courses" type="text" placeholder="e.g. 01003 - Mathematics 1a" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
             <datalist id="courses"></datalist>
           </div>
 
-
-          <button
-            id="submitButton"
-            type="submit"
-            class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 w-full font-medium transition-colors"
-          >
+          <button id="submitButton" type="submit" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 w-full font-medium transition-colors">
             Submit Survey
           </button>
         </form>
@@ -228,19 +180,9 @@
 
     <!-- Analytics Page -->
     <div id="analyticsPage" class="flex-1 p-0 hidden">
-      <div class="h-full w-full">
-        <!-- Stats Cards -->
-        <div class="h-full w-full bg-white">
-          <div class="h-full w-full">
-            <iframe 
-              title="Python Support Statistics BACKUP" 
-              class="w-full h-full"
-              style="min-height: calc(100vh - 4rem);"
-              src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" 
-              frameborder="0" 
-              allowFullScreen="true">
-            </iframe>
-          </div>
+      <div class="h-full w-full bg-white">
+        <div class="h-full w-full">
+          <iframe title="Python Support Statistics BACKUP" class="w-full h-full" style="min-height: calc(100vh - 4rem);" src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowFullScreen="true"></iframe>
         </div>
       </div>  
     </div>
@@ -250,14 +192,8 @@
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
-      <input id="accessCodeInput"
-             type="password"
-             placeholder="Enter daily code"
-             class="border border-gray-300 p-2 w-full rounded mb-4" />
-      <button id="codeSubmit"
-              class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 w-full">
-        Enter
-      </button>
+      <input id="accessCodeInput" type="password" placeholder="Enter daily code" class="border border-gray-300 p-2 w-full rounded mb-4" />
+      <button id="codeSubmit" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 w-full">Enter</button>
       <p id="loginError" class="text-sm text-red-600 mt-2 hidden">Incorrect code. Try again.</p>
     </div>
   </div>
@@ -267,26 +203,18 @@
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <h2 class="text-xl font-semibold mb-2">We value your time</h2>
       <p class="mb-4">Thank you for your feedback!</p>
-      <button id="closeModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-        Close
-      </button>
+      <button id="closeModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Close</button>
     </div>
   </div>
   
   <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <div class="flex justify-center mb-3">
-        <svg class="w-16 h-16 text-red-600" fill="currentColor" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"
-          image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 511.999 463.377">
-          <path
-            d="M289.639 9.137c12.411 7.25 23.763 18.883 33.037 34.913l.97 1.813 1.118 1.941 174.174 302.48c33.712 56.407-1.203 113.774-66.174 112.973v.12H73.485c-.895 0-1.78-.04-2.657-.112-59.104-.799-86.277-54.995-61.909-106.852.842-1.805 1.816-3.475 2.816-5.201L189.482 43.959l-.053-.032c9.22-15.786 20.717-27.457 33.411-34.805C243.788-3 268.711-3.086 289.639 9.137zM255.7 339.203c13.04 0 23.612 10.571 23.612 23.612 0 13.041-10.572 23.613-23.612 23.613-13.041 0-23.613-10.572-23.613-23.613s10.572-23.612 23.613-23.612zm17.639-35.379c-.794 19.906-34.506 19.931-35.278-.006-3.41-34.108-12.129-111.541-11.853-143.591.284-9.874 8.469-15.724 18.939-17.955 3.231-.686 6.781-1.024 10.357-1.019 3.595.008 7.153.362 10.387 1.051 10.818 2.303 19.309 8.392 19.309 18.446l-.043 1.005-11.818 142.069zM37.596 369.821L216.864 59.942c21.738-37.211 56.225-38.289 78.376 0l176.298 306.166c17.177 28.285 10.04 66.236-38.774 65.488H73.485c-33.017.756-52.841-25.695-35.889-61.775z" />
-        </svg>
+        <svg class="w-16 h-16 text-red-600" fill="currentColor" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 511.999 463.377"><path d="M289.639 9.137c12.411 7.25 23.763 18.883 33.037 34.913l.97 1.813 1.118 1.941 174.174 302.48c33.712 56.407-1.203 113.774-66.174 112.973v.12H73.485c-.895 0-1.78-.04-2.657-.112-59.104-.799-86.277-54.995-61.909-106.852.842-1.805 1.816-3.475 2.816-5.201L189.482 43.959l-.053-.032c9.22-15.786 20.717-27.457 33.411-34.805C243.788-3 268.711-3.086 289.639 9.137zM255.7 339.203c13.04 0 23.612 10.571 23.612 23.612 0 13.041-10.572 23.613-23.612 23.613-13.041 0-23.613-10.572-23.613-23.613s10.572-23.612 23.613-23.612zm17.639-35.379c-.794 19.906-34.506 19.931-35.278-.006-3.41-34.108-12.129-111.541-11.853-143.591.284-9.874 8.469-15.724 18.939-17.955 3.231-.686 6.781-1.024 10.357-1.019 3.595.008 7.153.362 10.387 1.051 10.818 2.303 19.309 8.392 19.309 18.446l-.043 1.005-11.818 142.069z"/></svg>
       </div>
       <h2 class="text-xl font-semibold mb-2 text-gray-800">Submission Failed</h2>
       <p class="error-message mb-4 text-gray-600">An error occurred while submitting your response.</p>
-      <button id="closeErrorModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600">
-        Try Again
-      </button>
+      <button id="closeErrorModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600">Try Again</button>
     </div>
   </div>
 
@@ -321,6 +249,8 @@
 
       <div id="qrResult" class="hidden">
         <canvas id="qrCanvas" class="mx-auto mb-3"></canvas>
+        <!-- NEW: <img> fallback when JS library is blocked -->
+        <img id="qrImg" class="mx-auto mb-3 hidden" alt="QR code"/>
         <div class="flex items-center gap-2">
           <input id="qrLink" type="text" readonly class="flex-1 border border-gray-300 p-2 rounded text-xs" />
           <button id="qrCopy" class="bg-gray-100 border px-3 py-2 rounded hover:bg-gray-200 text-sm">Copy</button>
@@ -329,12 +259,14 @@
     </div>
   </div>
 
+  <!-- Try to load the QR library; if blocked we’ll fall back to image services -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
   <script type="module">
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
     const tokenEndpoint = "https://python-support-proxy.azurewebsites.net/api/issueToken"; // creates single-use token
-    const WORKSHOP_DAY_KEY = "workshopDay";  // <— saves toggle state per device
+    const WORKSHOP_DAY_KEY = "workshopDay";
 
     // === Supporter authentication (no hard-coded code) ===
     const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY-MM-DD|key"
@@ -345,34 +277,26 @@
       if (params.get('reset') === '1') {
         try { localStorage.removeItem(STORAGE_KEY); } catch {}
         try { localStorage.removeItem('selectedBuilding'); } catch {}
-        // Remove reset and other transient params, then reload a clean URL
-        params.delete('reset');
-        params.delete('t');
-        params.delete('token');
-        params.delete('b');
-        params.delete('wd');
+        params.delete('reset'); params.delete('t'); params.delete('token'); params.delete('b'); params.delete('wd');
         const next = location.pathname + (params.toString() ? `?${params.toString()}` : '');
         location.replace(next);
       }
     })();
 
     function getSavedKey() {
-      const saved = localStorage.getItem(STORAGE_KEY);     // "date|key" or null
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return [null, null];
-      return saved.split("|");                             // [date, key]
+      return saved.split("|");
     }
-
     function isAuthValid() {
       const [date] = getSavedKey();
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const today = new Date().toISOString().slice(0, 10);
       return date === today;
     }
-
     function showLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
       document.getElementById("mainWrapper").classList.add("pointer-events-none", "opacity-40");
     }
-
     function hideLogin() {
       document.getElementById("loginModal").classList.add("hidden");
       document.getElementById("mainWrapper").classList.remove("pointer-events-none", "opacity-40");
@@ -380,23 +304,18 @@
 
     const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || new URLSearchParams(window.location.search).get('token');
     if (hasOneTimeToken) {
-      hideLogin();               // one-time link bypasses daily login
+      hideLogin();
     } else if (isAuthValid()) {
-      hideLogin();               // already logged in today
+      hideLogin();
     } else {
-      showLogin();               // prompt for today's code
+      showLogin();
     }
 
     document.getElementById("codeSubmit").addEventListener("click", async () => {
       const input = document.getElementById("accessCodeInput").value.trim();
-
-      // quick ping to proxy – we rely on 200/401 response to verify
       const ok = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": input,
-        },
+        headers: { "Content-Type": "application/json", "x-api-key": input },
         body: JSON.stringify({ ping: true })
       }).then(r => r.ok).catch(() => false);
 
@@ -414,7 +333,7 @@
     let selectedBuilding = localStorage.getItem('selectedBuilding')
       ? Number(localStorage.getItem('selectedBuilding'))
       : null;
-    // Read token/building from query parameters (for one-time links)
+
     const urlParams = new URLSearchParams(location.search);
     const linkToken = urlParams.get('t') || urlParams.get('token');
     const qpBuilding = urlParams.get('b');
@@ -422,7 +341,6 @@
       selectedBuilding = Number(qpBuilding);
       localStorage.setItem('selectedBuilding', selectedBuilding);
     }
-    // Optional: force Workshop via URL (&wd=1)
     const qpWD = urlParams.get('wd') === '1';
 
     // Page elements
@@ -438,10 +356,10 @@
     const surveyPage = document.getElementById('surveyPage');
     const analyticsPage = document.getElementById('analyticsPage');
 
-    // Generate a one-time survey link (for sending via Discord)
+    // Generate a one-time survey link
     async function generateOneTimeLink() {
       try {
-        const expiresHours = 24; // default token lifetime
+        const expiresHours = 24;
         const buildingPayload = (selectedBuilding === null) ? 'Online' : selectedBuilding;
 
         const resp = await fetch(tokenEndpoint, {
@@ -492,26 +410,26 @@
       const qrClose   = document.getElementById('qrClose');
       const qrCopy    = document.getElementById('qrCopy');
       const qrCanvas  = document.getElementById('qrCanvas');
+      const qrImg     = document.getElementById('qrImg');     // NEW
       const qrLinkInp = document.getElementById('qrLink');
       const qrResult  = document.getElementById('qrResult');
       const qrBuildingInp = document.getElementById('qrBuilding');
       const qrWorkshopDay = document.getElementById('qrWorkshopDay');
 
       function openQrModal() {
-        // Prefill with currently selected building if any
         if (selectedBuilding !== null && !isNaN(selectedBuilding)) {
           qrBuildingInp.value = String(selectedBuilding);
         } else {
           qrBuildingInp.value = '';
         }
-        // Prefill workshop with the saved toggle
         qrWorkshopDay.checked = (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+        // Reset UI each time modal opens
+        if (qrImg) { qrImg.src = ''; qrImg.classList.add('hidden'); }
+        qrCanvas.classList.remove('hidden');
         qrResult.classList.add('hidden');
         qrModal.classList.remove('hidden');
       }
-      function closeQrModal() {
-        qrModal.classList.add('hidden');
-      }
+      function closeQrModal() { qrModal.classList.add('hidden'); }
 
       // Quick-select buttons
       qrModal.querySelectorAll('.qr-quick').forEach(btn => {
@@ -522,14 +440,12 @@
       });
 
       async function createQr() {
-        // Validate building 0..990
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
         if (bVal === '' || isNaN(bNum) || bNum < 0 || bNum > 990) {
           showError('Please enter a valid building between 000 and 990 or use a quick option.');
           return;
         }
-        // Call token endpoint with chosen building
         try {
           const expiresHours = 24;
           const resp = await fetch(tokenEndpoint, {
@@ -550,16 +466,28 @@
           const wd = qrWorkshopDay.checked ? '&wd=1' : '';
           const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}&b=${encodeURIComponent(String(bNum))}${wd}`;
 
-          // Render QR
-          if (window.QRCode && QRCode.toCanvas) {
+          // Render QR – library if present, otherwise image fallback
+          qrLinkInp.value = url;
+          const hasLib = !!(window.QRCode && QRCode.toCanvas);
+          if (hasLib) {
             const ctx = qrCanvas.getContext('2d');
             ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
             await QRCode.toCanvas(qrCanvas, url, { width: 280, margin: 2 });
-            qrLinkInp.value = url;
-            qrResult.classList.remove('hidden');
+            qrCanvas.classList.remove('hidden');
+            qrImg.classList.add('hidden');
           } else {
-            showError('QR generator failed to load. Please check network access to cdn.jsdelivr.net and try again.');
+            const encoded = encodeURIComponent(url);
+            qrCanvas.classList.add('hidden');
+            qrImg.classList.remove('hidden');
+            // Primary image service
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encoded}`;
+            // Fallback if that is blocked too
+            qrImg.onerror = function () {
+              qrImg.onerror = null;
+              qrImg.src = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encoded}`;
+            };
           }
+          qrResult.classList.remove('hidden');
         } catch (e) {
           console.error(e);
           showError('Unexpected error while generating the QR.');
@@ -583,25 +511,16 @@
       localStorage.setItem('selectedBuilding', buildingNumber);
       showSurveyForm();
     }
-
     function selectCustomBuilding() {
       const customInput = document.getElementById('customBuilding');
       const buildingNumber = parseInt(customInput.value);
-      
       if (!customInput.value || isNaN(buildingNumber) || buildingNumber <= 100 || buildingNumber >= 500) {
         showError('Please enter a valid building number (101-499).');
         return;
       }
-      
       selectBuilding(buildingNumber);
     }
-
-    function handleEnterKey(event) {
-      if (event.key === 'Enter') {
-        selectCustomBuilding();
-      }
-    }
-
+    function handleEnterKey(event) { if (event.key === 'Enter') { selectCustomBuilding(); } }
     function showBuildingSelection() {
       localStorage.removeItem('selectedBuilding');
       buildingSelectionPage.classList.remove('hidden');
@@ -609,22 +528,17 @@
       analyticsPage.classList.add('hidden');
       if (pageTitle) pageTitle.textContent = 'Select Building';
     }
-
     function showSurveyForm() {
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.remove('hidden');
       analyticsPage.classList.add('hidden');
       if (pageTitle) pageTitle.textContent = 'Student Satisfaction Survey';
-
-      // Pre-check Workshop if Workshop Day is on OR wd=1 in URL
       const workshopCb = document.getElementById('workshop');
       if (workshopCb) {
         const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
         if (preferWD) workshopCb.checked = true;
       }
     }
-
-    // Make functions global for onclick handlers
     window.selectBuilding = selectBuilding;
     window.selectCustomBuilding = selectCustomBuilding;
     window.handleEnterKey = handleEnterKey;
@@ -633,43 +547,37 @@
     function doReset() {
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
       try { localStorage.removeItem('selectedBuilding'); } catch {}
-      // Remove any token query from the URL and return to the selector/login
       const cleanUrl = location.origin + location.pathname.replace('_reset', '');
       history.replaceState(null, '', cleanUrl);
       showBuildingSelection();
       showLogin();
     }
 
-    // Sidebar functionality
+    // Sidebar
     function openSidebar() {
       sidebar.classList.remove('-translate-x-full');
       sidebarOverlay.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
     }
-
     function closeSidebar() {
       sidebar.classList.add('-translate-x-full');
       sidebarOverlay.classList.add('hidden');
       document.body.classList.remove('overflow-hidden');
     }
-
     if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
     if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
 
-    // Page navigation
     function switchToSurvey() {
       if (selectedBuilding === null && !linkToken) {
         showBuildingSelection();
       } else {
         showSurveyForm();
       }
-      
       surveyTab.classList.add('border-r-4', 'border-red-500', 'bg-gray-50');
       analyticsTab.classList.remove('border-r-4', 'border-red-500', 'bg-gray-50');
       closeSidebar();
     }
-
     function switchToAnalytics() {
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.add('hidden');
@@ -679,16 +587,8 @@
       if (pageTitle) pageTitle.textContent = 'Survey Analytics';
       closeSidebar();
     }
-
-    surveyTab.addEventListener('click', (e) => {
-      e.preventDefault();
-      switchToSurvey();
-    });
-
-    analyticsTab.addEventListener('click', (e) => {
-      e.preventDefault();
-      switchToAnalytics();
-    });
+    surveyTab.addEventListener('click', (e) => { e.preventDefault(); switchToSurvey(); });
+    analyticsTab.addEventListener('click', (e) => { e.preventDefault(); switchToAnalytics(); });
     if (resetTab) {
       resetTab.addEventListener('click', (e) => {
         e.preventDefault();
@@ -699,13 +599,12 @@
       });
     }
 
-    // Error handling
     function showError(message) {
       document.querySelector('.error-message').textContent = message;
       document.getElementById('errorModal').classList.remove('hidden');
     }
 
-    // CSV autocomplete loader
+    // CSV autocomplete loader (unchanged)
     (async () => {
       try {
         const res = await fetch('./courses.csv');
@@ -719,17 +618,10 @@
           const quoteCount = (line.match(/"/g) || []).length;
           if (!inQuotes) {
             buffer = line;
-            if (quoteCount % 2 !== 0) {
-              inQuotes = true;
-            } else {
-              records.push(buffer);
-            }
+            if (quoteCount % 2 !== 0) { inQuotes = true; } else { records.push(buffer); }
           } else {
             buffer += '\n' + line;
-            if (quoteCount % 2 !== 0) {
-              inQuotes = false;
-              records.push(buffer);
-            }
+            if (quoteCount % 2 !== 0) { inQuotes = false; records.push(buffer); }
           }
         });
         records.shift();
@@ -737,24 +629,16 @@
         records.forEach(record => {
           const idx = record.indexOf(',');
           const code = record.slice(0, idx).trim();
-          let rawName = record.slice( idx + 1 );
-          rawName = rawName
-            .replace(/\r/g, '')
-            .replace(/CR$/, '')
-            .replace(/^"+|"+$/g, '')
-            .trim();
+          let rawName = record.slice( idx + 1 ).replace(/\r/g, '').replace(/CR$/, '').replace(/^"+|"+$/g, '').trim();
           const opt = document.createElement('option');
           opt.value = `${code} - ${rawName}`;
           dl.appendChild(opt);
         });
-      } catch (err) {
-        console.error('Error loading courses.csv:', err);
-      }
+      } catch (err) { console.error('Error loading courses.csv:', err); }
     })();
 
-    // Form handling
+    // Form handling (unchanged except final reset to student view)
     const form = document.getElementById("surveyForm");
-    // Role toggle (student vs employee)
     const roleInputs      = form.querySelectorAll('input[name="role"]');
     const studentWrapper  = document.getElementById('studentWrapper');
     const usernameWrapper = document.getElementById('usernameWrapper');
@@ -767,8 +651,8 @@
       form.student_number.required = isStudent;
       form.dtu_username.required   = !isStudent;
     }
-    // run once on load
     toggleRole();
+
     const thankYouModal = document.getElementById("thankYouModal");
     const errorModal = document.getElementById("errorModal");
     const closeBtn = document.getElementById("closeModal");
@@ -777,19 +661,16 @@
 
     form.addEventListener("submit", async (e) => { 
       e.preventDefault();
-      
       submitButton.disabled = true;
       submitButton.textContent = 'Submitting...';
       submitButton.classList.add('opacity-50', 'cursor-not-allowed');
       
       const isStudent = form.role.value === 'student';
       const payload = {
-        role: form.role.value,                                   // "student" or "employee"
+        role: form.role.value,
         student_number: isStudent ? 's' + form.student_number.value.trim() : null,
         username:        !isStudent ? form.dtu_username.value.trim() : null,
-        satisfaction: Number(
-          form.querySelector('input[name="satisfaction"]:checked').value
-        ),
+        satisfaction: Number(form.querySelector('input[name="satisfaction"]:checked').value),
         course_number: form.course_number.value.trim() || null,
         building_Number: selectedBuilding,
         workshop: form.workshop.checked,
@@ -798,56 +679,33 @@
 
       try {
         const headers = { "Content-Type": "application/json" };
-        if (linkToken) {
-          headers["x-token"] = linkToken;           // one-time link path
-        } else {
-          headers["x-api-key"] = getSavedKey()[1] || ""; // daily code path
-        }
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload)
-        });
+        if (linkToken) { headers["x-token"] = linkToken; } else { headers["x-api-key"] = getSavedKey()[1] || ""; }
+        const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
         
         if (response.ok) {
           thankYouModal.classList.remove('hidden'); 
-
-          // Reset and force UI back to student view with the 's' prefix field visible
           form.reset();
           form.role.value = 'student';
           toggleRole();
           document.getElementById('student_number').value = '';
           document.getElementById('student_number').focus();
-
           document.activeElement?.blur();
-          setTimeout(() => {
-            thankYouModal.classList.add('hidden');
-          }, 3000); 
+          setTimeout(() => { thankYouModal.classList.add('hidden'); }, 3000); 
         } else {
           let message = "An error occurred while submitting your response.";
           try {
             const ct = (response.headers.get('Content-Type') || '').toLowerCase();
             if (ct.includes('application/json')) {
               const j = await response.json();
-              message = j?.message
-                        || (typeof j === 'string' ? j : JSON.stringify(j));
+              message = j?.message || (typeof j === 'string' ? j : JSON.stringify(j));
             } else {
               const t = await response.text();
               if (t && t.trim().length) message = t.trim();
             }
-          } catch (parseErr) {
-            console.warn('Could not parse error body', parseErr);
-          }
-
+          } catch {}
           errorModal.querySelector('.error-message').textContent = message;
           errorModal.classList.remove('hidden');
-
-          // Keep typed value so the user can correct it
-          if (form.role.value === 'student') {
-            form.student_number.focus();
-          } else {
-            form.dtu_username?.focus();
-          }
+          if (form.role.value === 'student') { form.student_number.focus(); } else { form.dtu_username?.focus(); }
         }
       } catch (err) {
         console.error("Background submit failed:", err);
@@ -859,23 +717,12 @@
       }
     });
 
-    closeBtn.addEventListener('click', () => {
-      thankYouModal.classList.add('hidden');
-    });
+    closeBtn.addEventListener('click', () => { thankYouModal.classList.add('hidden'); });
+    closeErrorBtn.addEventListener('click', () => { errorModal.classList.add('hidden'); });
 
-    closeErrorBtn.addEventListener('click', () => {
-      errorModal.classList.add('hidden');
-    });
-
-    // Initialize with building selection or survey page
-    if (linkToken) {
-      // one-time invite: skip building selection (backend injects building if needed)
-      showSurveyForm();
-    } else if (selectedBuilding === null) {
-      showBuildingSelection();
-    } else {
-      showSurveyForm();
-    }
+    if (linkToken) { showSurveyForm(); }
+    else if (selectedBuilding === null) { showBuildingSelection(); }
+    else { showSurveyForm(); }
   </script>
 </body>
 </html>
