@@ -248,6 +248,8 @@
         <button id="qrClose" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Close</button>
       </div>
 
+      <p id="qrInlineError" class="text-sm text-red-600 mb-3 hidden"></p>
+
       <div id="qrResult" class="hidden">
         <canvas id="qrCanvas" class="mx-auto mb-3"></canvas>
         <!-- <img> fallback when JS library is blocked -->
@@ -408,6 +410,7 @@
       const qrResult  = document.getElementById('qrResult');
       const qrBuildingInp = document.getElementById('qrBuilding');
       const qrWorkshopDay = document.getElementById('qrWorkshopDay');
+      const qrInlineError = document.getElementById('qrInlineError');
 
       function openQrModal() {
         if (selectedBuilding !== null && !isNaN(selectedBuilding)) {
@@ -419,6 +422,7 @@
         if (qrImg) { qrImg.src = ''; qrImg.classList.add('hidden'); }
         qrCanvas.classList.remove('hidden');
         qrResult.classList.add('hidden');
+        if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
         qrModal.classList.remove('hidden');
       }
       function closeQrModal() { qrModal.classList.add('hidden'); }
@@ -427,15 +431,28 @@
         btn.addEventListener('click', () => {
           const v = btn.getAttribute('data-building');
           qrBuildingInp.value = v;
+          if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
         });
       });
+
+      if (qrBuildingInp) {
+        qrBuildingInp.addEventListener('input', () => {
+          if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
+        });
+      }
 
       async function createQr() {
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
         if (bVal === '' || isNaN(bNum) || bNum < 0 || bNum > 990) {
-          showError('Please enter a valid building between 000 and 990 or use a quick option.');
+          if (qrInlineError) {
+            qrInlineError.textContent = 'Please enter a valid building between 000 and 990 or use a quick option.';
+            qrInlineError.classList.remove('hidden');
+          }
           return;
+        } else if (qrInlineError) {
+          qrInlineError.textContent = '';
+          qrInlineError.classList.add('hidden');
         }
         try {
           const expiresHours = 24;
@@ -476,6 +493,7 @@
               qrImg.src = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encoded}`;
             };
           }
+          if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
           qrResult.classList.remove('hidden');
         } catch (e) {
           console.error(e);
