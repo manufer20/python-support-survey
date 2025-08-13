@@ -47,9 +47,16 @@
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Select Your Building</h2>
-          <button id="btnGenerateLink" type="button" class="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">
-            Generate one-time link
-          </button>
+          <!-- RIGHT SIDE: Workshop Day toggle + Link button -->
+          <div class="flex items-center gap-4">
+            <label class="inline-flex items-center text-gray-700">
+              <input id="workshopDayToggle" type="checkbox" class="h-5 w-5 text-red-500 border-gray-300 rounded">
+              <span class="ml-2 whitespace-nowrap">Workshop Day</span>
+            </label>
+            <button id="btnGenerateLink" type="button" class="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">
+              Generate one-time link
+            </button>
+          </div>
         </div>
 
         <div class="space-y-4">
@@ -260,7 +267,6 @@
   <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <div class="flex justify-center mb-3">
-
         <svg class="w-16 h-16 text-red-600" fill="currentColor" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"
           image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 511.999 463.377">
           <path
@@ -279,6 +285,7 @@
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
     const tokenEndpoint = "https://python-support-proxy.azurewebsites.net/api/issueToken"; // creates single-use token
+    const WORKSHOP_DAY_KEY = "workshopDay";  // <— saves toggle state per device
 
     // === Supporter authentication (no hard-coded code) ===
     const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY-MM-DD|key"
@@ -349,6 +356,8 @@
       selectedBuilding = Number(qpBuilding);
       localStorage.setItem('selectedBuilding', selectedBuilding);
     }
+    // Optional: force Workshop via URL (&wd=1)
+    const qpWD = urlParams.get('wd') === '1';
 
     // Page elements
     const sidebar = document.getElementById('sidebar');
@@ -386,7 +395,8 @@
         const data = await resp.json().catch(()=>({}));
         const baseUrl = window.location.origin + window.location.pathname;
         const addB = (selectedBuilding !== null);
-        const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}${addB ? `&b=${encodeURIComponent(String(selectedBuilding))}` : ''}`;
+        const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
+        const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}${addB ? `&b=${encodeURIComponent(String(selectedBuilding))}` : ''}${wd}`;
 
         try { await navigator.clipboard.writeText(url); } catch {}
         alert('One-time survey link copied to clipboard:\n' + url);
@@ -396,17 +406,24 @@
       }
     }
 
-    // Wire the button once DOM is ready
+    // Wire the button & restore toggle once DOM is ready
     window.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('btnGenerateLink');
       if (btn) btn.addEventListener('click', generateOneTimeLink);
+
+      const wdToggle = document.getElementById('workshopDayToggle');
+      if (wdToggle) {
+        wdToggle.checked = localStorage.getItem(WORKSHOP_DAY_KEY) === 'true';
+        wdToggle.addEventListener('change', () => {
+          localStorage.setItem(WORKSHOP_DAY_KEY, String(wdToggle.checked));
+        });
+      }
     });
 
     // Building selection functions
     function selectBuilding(buildingNumber) {
       selectedBuilding = buildingNumber;
       localStorage.setItem('selectedBuilding', buildingNumber);
-      //selectedBuildingText.textContent = `Building ${buildingNumber}`;
       showSurveyForm();
     }
 
@@ -441,6 +458,13 @@
       surveyPage.classList.remove('hidden');
       analyticsPage.classList.add('hidden');
       if (pageTitle) pageTitle.textContent = 'Student Satisfaction Survey';
+
+      // Pre-check Workshop if Workshop Day is on OR wd=1 in URL
+      const workshopCb = document.getElementById('workshop');
+      if (workshopCb) {
+        const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+        if (preferWD) workshopCb.checked = true;
+      }
     }
 
     // Make functions global for onclick handlers
@@ -468,7 +492,7 @@
 
     // Page navigation
     function switchToSurvey() {
-      if (selectedBuilding === null) {
+      if (selectedBuilding === null && !linkToken) {
         showBuildingSelection();
       } else {
         showSurveyForm();
