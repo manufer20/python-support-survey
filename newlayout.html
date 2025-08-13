@@ -692,7 +692,6 @@
     });
 
     // Initialize with building selection or survey page
-    const linkToken = urlParams.get('t') || urlParams.get('token');
     if (linkToken) {
       // one-time invite: skip building selection (backend injects building if needed)
       showSurveyForm();
