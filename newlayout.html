@@ -296,19 +296,20 @@
     // === Supporter authentication (no hard-coded code) ===
     const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY-MM-DD|key"
 
-    // --- Reset via URL (_reset.html, ?reset=1, or #reset) ---
+    // --- Reset via URL: ONLY supports ?reset=1 ---
     (function () {
       const params = new URLSearchParams(location.search);
-      const isReset = /_reset(?:\.html)?$/.test(location.pathname)
-                   || params.get('reset') === '1'
-                   || params.get('reset') === 'true'
-                   || location.hash === '#reset';
-      if (isReset) {
+      if (params.get('reset') === '1') {
         try { localStorage.removeItem(STORAGE_KEY); } catch {}
         try { localStorage.removeItem('selectedBuilding'); } catch {}
-        // Redirect to the base page without the reset markers
-        const cleanPath = location.pathname.replace('_reset', '');
-        location.replace(cleanPath);
+        // Remove reset and other transient params, then reload a clean URL
+        params.delete('reset');
+        params.delete('t');
+        params.delete('token');
+        params.delete('b');
+        params.delete('wd');
+        const next = location.pathname + (params.toString() ? `?${params.toString()}` : '');
+        location.replace(next);
       }
     })();
 
@@ -558,7 +559,10 @@
     if (resetTab) {
       resetTab.addEventListener('click', (e) => {
         e.preventDefault();
-        doReset();
+        const url = new URL(location.href);
+        url.searchParams.set('reset', '1');
+        url.hash = '';
+        location.href = url.pathname + '?' + url.searchParams.toString();
       });
     }
 
