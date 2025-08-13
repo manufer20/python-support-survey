@@ -543,6 +543,9 @@
       const text = (typeof raw === 'string') ? raw : (raw?.message || '');
       const l = (text || '').toLowerCase();
 
+      // Detect the role currently selected in the form (if visible).
+      const currentRole = (document.getElementById('surveyForm')?.role?.value) || null;
+
       let title = "We couldn't submit your response";
       let message = 'Please try again in a moment.';
 
@@ -558,10 +561,14 @@
         (l.includes('dtu') && l.includes('username') && (l.includes('not') || l.includes('invalid'))) ||
         (l.includes('credentials') && (l.includes('not') || l.includes('invalid')));
 
-      if (studentNotFound) {
+      // If the current role is employee and the backend returned a "student not found"
+      // style message, reinterpret it as a username issue so the message is appropriate.
+      const treatAsUsernameIssue = (currentRole === 'employee') && studentNotFound;
+
+      if (studentNotFound && !treatAsUsernameIssue) {
         title = 'Student number not found';
         message = "We couldn't find that student number. Please check the six digits after 's' on your DTU ID and try again.";
-      } else if (usernameNotFound) {
+      } else if (usernameNotFound || treatAsUsernameIssue) {
         title = 'DTU username not found';
         message = "We couldn't find that DTU username. Please enter your DTU login (letters only, e.g., aripau) and try again.";
       } else if (l.includes('invalid or used token') || l.includes('token expired') || (status === 401 && usingToken)) {
@@ -572,7 +579,7 @@
         message = 'Your session has expired. Please refresh and try again.';
       } else if (l.includes('triggerinputschemamismatch') || l.includes('invalid type') || l.includes('schema') || l.includes('pattern')) {
         title = 'Check the format';
-        message = "For student numbers, enter the six digits after 's'. For DTU username, use letters only (e.g., aripau).";
+        message = "For student numbers, enter exactly six digits (no 's'). Example: if your card shows “s215213”, type 215213. For DTU usernames, use letters only (e.g., aripau).";
       } else if (status >= 500) {
         title = 'Service temporarily unavailable';
         message = 'We are experiencing a temporary problem. Please try again in a minute.';
@@ -656,8 +663,52 @@
       usernameWrapper.classList.toggle('hidden',  isStudent);
       form.student_number.required = isStudent;
       form.dtu_username.required   = !isStudent;
+      clearCustomValidity();
     }
     toggleRole();
+
+    // --- Custom, explicit validation messages ---
+    const studentInput  = document.getElementById('student_number');
+    const usernameInput = document.getElementById('dtu_username');
+
+    if (studentInput) {
+      studentInput.addEventListener('input', () => {
+        // Clear any previous custom message while typing
+        studentInput.setCustomValidity('');
+      });
+      studentInput.addEventListener('invalid', () => {
+        const v = (studentInput.value || '').trim();
+        if (!/^\d{6}$/.test(v)) {
+          studentInput.setCustomValidity(
+            "Please enter exactly six digits (no 's'). Example: if your student card shows “s215213”, type 215213."
+          );
+        } else {
+          studentInput.setCustomValidity('');
+        }
+      });
+    }
+
+    if (usernameInput) {
+      usernameInput.addEventListener('input', () => {
+        usernameInput.setCustomValidity('');
+      });
+      usernameInput.addEventListener('invalid', () => {
+        const v = (usernameInput.value || '').trim();
+        if (!/^[A-Za-z]{3,20}$/.test(v)) {
+          usernameInput.setCustomValidity(
+            "Use your DTU username (letters only). Example: aripau"
+          );
+        } else {
+          usernameInput.setCustomValidity('');
+        }
+      });
+    }
+
+    // Ensure the right field is required when switching roles & reset messages
+    function clearCustomValidity() {
+      if (studentInput)  studentInput.setCustomValidity('');
+      if (usernameInput) usernameInput.setCustomValidity('');
+    }
 
     const thankYouModal = document.getElementById("thankYouModal");
     const errorModal = document.getElementById("errorModal");
