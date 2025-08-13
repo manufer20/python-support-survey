@@ -739,22 +739,30 @@
     const closeErrorBtn = document.getElementById("closeErrorModal");
     const submitButton = document.getElementById("submitButton");
 
-    form.addEventListener("submit", async (e) => { 
+form.addEventListener("submit", async (e) => { 
       e.preventDefault();
       submitButton.disabled = true;
       submitButton.textContent = 'Submitting...';
       submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-      
+
+      const satEl = form.querySelector('input[name="satisfaction"]:checked');
+      if (!satEl) {
+        showError('Please select a satisfaction level (1–5).');
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit Survey';
+        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        return;
+      }
+
       const isStudent = form.role.value === 'student';
       const payload = {
         role: form.role.value,
         student_number: isStudent ? 's' + form.student_number.value.trim() : null,
         username:        !isStudent ? form.dtu_username.value.trim() : null,
-        satisfaction: Number(form.querySelector('input[name="satisfaction"]:checked').value),
+        satisfaction: Number(satEl.value),
         course_number: form.course_number.value.trim() || null,
         building_Number: selectedBuilding,
-        workshop: form.workshop.checked,
-        token: linkToken || null,
+        workshop: form.workshop.checked
       };
 
       try {
