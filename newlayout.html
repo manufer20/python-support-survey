@@ -125,10 +125,19 @@
 
             <!-- Workshop: BELOW student number on phones (order-3), right side on desktop (order-2) -->
             <div class="order-3 sm:order-2">
-              <div class="flex items-center sm:justify-end">
-                <input id="workshop" name="workshop" type="checkbox" class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"/>
-                <label for="workshop" class="ml-2 text-gray-700 font-medium whitespace-nowrap">Attended&nbsp;Workshop</label>
-              </div>
+              <fieldset>
+                <legend class="block text-gray-700 mb-2 font-medium">Attended workshop?</legend>
+                <div class="flex items-center gap-4 sm:justify-end">
+                  <label class="inline-flex items-center text-gray-700">
+                    <input type="radio" id="workshop_yes" name="workshop" value="yes" class="form-radio h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300" />
+                    <span class="ml-2">Yes</span>
+                  </label>
+                  <label class="inline-flex items-center text-gray-700">
+                    <input type="radio" id="workshop_no" name="workshop" value="no" class="form-radio h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300" />
+                    <span class="ml-2">No</span>
+                  </label>
+                </div>
+              </fieldset>
             </div>
 
             <!-- Student number: second on mobile; full-width row below roles/workshop on desktop -->
@@ -545,10 +554,13 @@
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.remove('hidden');
       analyticsPage.classList.add('hidden');
-      const workshopCb = document.getElementById('workshop');
-      if (workshopCb) {
-        const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
-        if (preferWD) workshopCb.checked = true;
+      const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+      const workshopYes = document.getElementById('workshop_yes');
+      const workshopNo  = document.getElementById('workshop_no');
+      if (workshopYes && workshopNo) {
+        if (preferWD) {
+          workshopYes.checked = true;
+        }
       }
     }
     window.selectBuilding = selectBuilding;
@@ -731,7 +743,7 @@
         satisfaction: Number(form.querySelector('input[name="satisfaction"]:checked').value),
         course_number: form.course_number.value.trim() || null,
         building_Number: selectedBuilding,
-        workshop: form.workshop.checked,
+        workshop: (form.elements['workshop'] && form.elements['workshop'].value === 'yes'),
         token: linkToken || null,
       };
 
