@@ -109,34 +109,42 @@
         </div>
         
         <form id="surveyForm" class="space-y-6">
-          <!-- Role selector + Workshop -->
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-            <label class="inline-flex items-center text-gray-700">
-              <input type="radio" name="role" value="student" class="form-radio" checked />
-              <span class="ml-2">BSc / MSc Student</span>
-            </label>
-            <label class="inline-flex items-center text-gray-700">
-              <input type="radio" name="role" value="employee" class="form-radio" />
-              <span class="ml-2">PhD&nbsp;/&nbsp;Employee</span>
-            </label>
-
-            <div class="flex items-center sm:ml-auto">
-              <input id="workshop" name="workshop" type="checkbox" class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"/>
-              <label for="workshop" class="ml-2 text-gray-700 font-medium whitespace-nowrap">Attended&nbsp;Workshop</label>
+          <!-- Role + Student/Username + Workshop (phone-first ordering) -->
+          <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
+            <!-- Roles: left on desktop, first on mobile -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
+              <label class="inline-flex items-center text-gray-700">
+                <input type="radio" name="role" value="student" class="form-radio" checked />
+                <span class="ml-2">Student</span>
+              </label>
+              <label class="inline-flex items-center text-gray-700">
+                <input type="radio" name="role" value="employee" class="form-radio" />
+                <span class="ml-2">PhD&nbsp;/&nbsp;Employee</span>
+              </label>
             </div>
-          </div>
 
-          <div id="studentWrapper">
-            <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
-            <div class="flex">
-              <span class="inline-flex items-center px-3 text-gray-700 bg-gray-200 border border-r-0 border-gray-300 rounded-l">s</span>
-              <input id="student_number" name="student_number" type="text" inputmode="numeric" pattern="[0-9]{6}" placeholder="e.g. 123456" title="Enter 6 digits only. Example: s123456 (type only the digits after ‘s’)" class="flex-1 border border-gray-300 p-2 sm:p-3 rounded-r focus:ring-2 focus:ring-red-500 focus:border-red-500" required/>
+            <!-- Workshop: BELOW student number on phones (order-3), right side on desktop (order-2) -->
+            <div class="order-3 sm:order-2">
+              <div class="flex items-center sm:justify-end">
+                <input id="workshop" name="workshop" type="checkbox" class="h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300 rounded"/>
+                <label for="workshop" class="ml-2 text-gray-700 font-medium whitespace-nowrap">Attended&nbsp;Workshop</label>
+              </div>
             </div>
-          </div>
 
-          <div id="usernameWrapper" class="hidden">
-            <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
-            <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
+            <!-- Student number: second on mobile; full-width row below roles/workshop on desktop -->
+            <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
+              <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 text-gray-700 bg-gray-200 border border-r-0 border-gray-300 rounded-l">s</span>
+                <input id="student_number" name="student_number" type="text" inputmode="numeric" pattern="[0-9]{6}" placeholder="e.g. 123456" title="Enter 6 digits only. Example: s123456 (type only the digits after ‘s’)" class="flex-1 border border-gray-300 p-2 sm:p-3 rounded-r focus:ring-2 focus:ring-red-500 focus:border-red-500" required/>
+              </div>
+            </div>
+
+            <!-- Username (employee): same slot as student on desktop; second on mobile when shown -->
+            <div id="usernameWrapper" class="hidden order-2 sm:order-3 sm:col-span-3">
+              <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
+              <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
+            </div>
           </div>
 
           <div>
