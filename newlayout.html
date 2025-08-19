@@ -558,9 +558,8 @@
       const workshopYes = document.getElementById('workshop_yes');
       const workshopNo  = document.getElementById('workshop_no');
       if (workshopYes && workshopNo) {
-        if (preferWD) {
-          workshopYes.checked = true;
-        }
+        workshopYes.checked = !!preferWD;   // preselect Yes only when workshop day is preselected
+        workshopNo.checked  = !preferWD;    // otherwise default to No
       }
     }
     window.selectBuilding = selectBuilding;
@@ -757,6 +756,15 @@
           form.reset();
           form.role.value = 'student';
           toggleRole();
+          {
+            const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+            const workshopYes = document.getElementById('workshop_yes');
+            const workshopNo  = document.getElementById('workshop_no');
+            if (workshopYes && workshopNo) {
+              workshopYes.checked = !!preferWD;
+              workshopNo.checked  = !preferWD;
+            }
+          }
           document.getElementById('student_number').value = '';
           document.getElementById('student_number').focus();
           document.activeElement?.blur();
