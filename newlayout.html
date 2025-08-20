@@ -108,13 +108,13 @@
 
     <!-- Survey Page -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
-      <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
+      <div class="w-full max-w-xl md:max-w-3xl mx_auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
         </div>
 
         <form id="surveyForm" class="space-y-6">
-          <!-- Role + Workshop (phone-first, workshop below student number on phones) -->
+          <!-- Role + Workshop -->
           <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
             <!-- Roles -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
@@ -352,10 +352,16 @@
     function showLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
       document.getElementById("mainWrapper").classList.add("pointer-events-none", "opacity-40");
+      // Autofocus the password field
+      setTimeout(() => {
+        const inp = document.getElementById("accessCodeInput");
+        if (inp) { inp.focus(); inp.select(); }
+      }, 0);
     }
     function hideLogin() {
       document.getElementById("loginModal").classList.add("hidden");
       document.getElementById("mainWrapper").classList.remove("pointer-events-none", "opacity-40");
+      document.getElementById("loginError").classList.add("hidden");
     }
 
     const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || new URLSearchParams(window.location.search).get('token');
@@ -367,6 +373,7 @@
       showLogin();
     }
 
+    // Submit on click
     document.getElementById("codeSubmit").addEventListener("click", async () => {
       const input = document.getElementById("accessCodeInput").value.trim();
       const ok = await fetch(endpoint, {
@@ -379,10 +386,17 @@
         const today = new Date().toISOString().slice(0, 10);
         localStorage.setItem(STORAGE_KEY, `${today}|${input}`);
         hideLogin();
-        document.getElementById("loginError").classList.add("hidden");
         document.getElementById("accessCodeInput").value = "";
       } else {
         document.getElementById("loginError").classList.remove("hidden");
+      }
+    });
+
+    // Submit on ENTER
+    document.getElementById("accessCodeInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("codeSubmit").click();
       }
     });
 
@@ -685,7 +699,7 @@
     if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
     if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
 
-    // Error helpers
+    // Error helpers (single definition)
     function friendlyError(raw, status = 0, usingToken = false) {
       const text = (typeof raw === 'string') ? raw : (raw?.message || '');
       const l = (text || '').toLowerCase();
@@ -720,10 +734,11 @@
     }
 
     function showError(input, status) {
-      const usingToken = !!linkToken;
+      const usingToken = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
       const { title, message } = (typeof input === 'string')
         ? friendlyError(input, status, usingToken)
         : (input && typeof input === 'object') ? input : friendlyError('', status, usingToken);
+
       const titleEl = document.getElementById('errorTitle');
       if (titleEl) titleEl.textContent = title;
       document.querySelector('.error-message').textContent = message;
@@ -746,7 +761,7 @@
         }
         closeBtn.onclick = () => {
           document.getElementById('errorModal').classList.add('hidden');
-          if (redirectOnErrorClose && linkToken) {
+          if (redirectOnErrorClose && usingToken) {
             window.location.replace('https://pythonsupport.dtu.dk/');
           }
         };
@@ -754,39 +769,6 @@
 
       document.getElementById('errorModal').classList.remove('hidden');
     }
-
-    // CSV autocomplete loader
-    (async () => {
-      try {
-        const res = await fetch('./courses.csv');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const csv = await res.text();
-        const lines = csv.split('\n');
-        const records = [];
-        let buffer = '';
-        let inQuotes = false;
-        lines.forEach(line => {
-          const quoteCount = (line.match(/"/g) || []).length;
-          if (!inQuotes) {
-            buffer = line;
-            if (quoteCount % 2 !== 0) { inQuotes = true; } else { records.push(buffer); }
-          } else {
-            buffer += '\n' + line;
-            if (quoteCount % 2 !== 0) { inQuotes = false; records.push(buffer); }
-          }
-        });
-        records.shift();
-        const dl = document.getElementById('courses');
-        records.forEach(record => {
-          const idx = record.indexOf(',');
-          const code = record.slice(0, idx).trim();
-          let rawName = record.slice( idx + 1 ).replace(/\r/g, '').replace(/CR$/, '').replace(/^"+|"+$/g, '').trim();
-          const opt = document.createElement('option');
-          opt.value = `${code} - ${rawName}`;
-          dl.appendChild(opt);
-        });
-      } catch (err) { console.error('Error loading courses.csv:', err); }
-    })();
 
     // Form handling
     const form = document.getElementById("surveyForm");
@@ -840,6 +822,8 @@
       submitButton.classList.add('opacity-50', 'cursor-not-allowed');
 
       const isStudent = form.role.value === 'student';
+      const linkToken = new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token');
+
       const payload = {
         role: form.role.value,
         student_number: isStudent ? 's' + form.student_number.value.trim() : null,
@@ -908,6 +892,7 @@
 
     // Thank-you close behavior
     closeBtn.addEventListener('click', () => {
+      const linkToken = new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token');
       if (redirectOnThankYouClose && linkToken) {
         window.location.replace('https://pythonsupport.dtu.dk/');
       } else {
@@ -916,17 +901,9 @@
     });
 
     // Init page
-    if (linkToken) { showSurveyForm(); }
+    if (hasOneTimeToken) { showSurveyForm(); }
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
-
-    // Basic error modal close (fallback)
-    function showError(message) {
-      document.querySelector('.error-message').textContent = (typeof message === 'string') ? message : (message?.message || 'An error occurred.');
-      document.getElementById('errorModal').classList.remove('hidden');
-      const btn = document.getElementById('closeErrorModal');
-      btn.onclick = () => document.getElementById('errorModal').classList.add('hidden');
-    }
 
     // Sidebar hamburger (optional; add the button in header if you want)
     // <button id="openSidebar">...</button> can be added to your header if needed.
