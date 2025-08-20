@@ -362,6 +362,7 @@
       localStorage.setItem('selectedBuilding', selectedBuilding);
     }
     const qpWD = urlParams.get('wd') === '1';
+    if (linkToken) { selectedBuilding = null; }
 
     // Pre-validate one-time links: if token is used/expired, show an error and lock the form
     async function verifyOneTimeToken() {
@@ -778,7 +779,7 @@
         username:        !isStudent ? form.dtu_username.value.trim() : null,
         satisfaction: Number(form.querySelector('input[name="satisfaction"]:checked').value),
         course_number: form.course_number.value.trim() || null,
-        building_Number: selectedBuilding,
+        building_Number: linkToken ? null : selectedBuilding,
         workshop: (form.elements['workshop'] && form.elements['workshop'].value === 'yes'),
         token: linkToken || null,
       };
