@@ -395,7 +395,7 @@
     async function generateOneTimeLink() {
       try {
         const expiresHours = 24;
-        const buildingPayload = (selectedBuilding === null) ? 'Online' : selectedBuilding;
+        const buildingPayload = 'Online';
 
         const resp = await fetch(tokenEndpoint, {
           method: 'POST',
@@ -414,9 +414,9 @@
 
         const data = await resp.json().catch(()=>({}));
         const baseUrl = window.location.origin + window.location.pathname;
-        const addB = (selectedBuilding !== null);
         const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
-        const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}${addB ? `&b=${encodeURIComponent(String(selectedBuilding))}` : ''}${wd}`;
+        const url = data.url || data.oneTimeUrl || `${baseUrl}?token=${encodeURIComponent(data.token)}${wd}`;
+        
 
         try { await navigator.clipboard.writeText(url); } catch {}
         alert('One-time survey link copied to clipboard:\n' + url);
