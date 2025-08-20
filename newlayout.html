@@ -659,7 +659,7 @@
       document.querySelector('.error-message').textContent = message;
 
       // For expired/invalid token, closing should redirect
-      window.redirectOnErrorClose = false;
+      redirectOnErrorClose = false;
       const combo = (title + ' ' + message).toLowerCase();
       const isExpiredTokenError = usingToken && (
         combo.includes('link has expired') ||
@@ -669,7 +669,7 @@
       const closeBtn = document.getElementById('closeErrorModal');
       if (closeBtn) {
         if (isExpiredTokenError) {
-          window.redirectOnErrorClose = true;
+          redirectOnErrorClose = true;
           closeBtn.textContent = 'Go to Python Support';
         } else {
           closeBtn.textContent = 'Try Again';
