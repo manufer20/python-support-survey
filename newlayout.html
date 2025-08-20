@@ -140,7 +140,7 @@
               </fieldset>
             </div>
 
-            <!-- Student number: second on mobile; full-width row below roles/workshop on desktop -->
+            <!-- Student number -->
             <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
               <div class="flex">
@@ -149,7 +149,7 @@
               </div>
             </div>
 
-            <!-- Username (employee): same slot as student on desktop; second on mobile when shown -->
+            <!-- Username (employee) -->
             <div id="usernameWrapper" class="hidden order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
               <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
@@ -384,7 +384,7 @@
       }
     }
 
-    // Page elements (trimmed to the ones we actually use)
+    // Page elements
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
     const surveyPage = document.getElementById('surveyPage');
     const analyticsPage = document.getElementById('analyticsPage');
@@ -606,7 +606,7 @@
       let title = "We couldn't submit your response";
       let message = 'Please try again in a moment.';
 
-      const roleNow = (document.querySelector('input[name="role"]:checked')?.value || 'student');
+      const roleNow = (document.querySelector('input[name="role"]:checked")?.value || 'student');
       if (l.includes('study number does not exist') || l.includes('student number does not exist')) {
         if (roleNow === 'employee') {
           title = 'DTU username not found';
@@ -615,7 +615,7 @@
           title = 'Student number not found';
           message = "We couldn't find that student number. Please check the six digits after 's' on your DTU ID (e.g. s123456) and try again.";
         }
-      } else if (l.includes('invalid or used token') || l.includes('token expired') || (status === 401 && usingToken)) {
+      } else if (l.includes('invalid or used token') || l.includes('token expired') || (status === 401 && usingToken) || l.includes('link has expired')) {
         title = "Oops, this link has expired";
         message = 'This one-time link has already been used or expired. Please request a new link from your supporter.';
       } else if (l.includes('unauthorized')) {
@@ -650,12 +650,32 @@
     }
 
     function showError(input, status) {
+      const usingToken = !!linkToken;
       const { title, message } = (typeof input === 'string')
-        ? friendlyError(input, status, !!linkToken)
-        : (input && typeof input === 'object') ? input : friendlyError('', status, !!linkToken);
+        ? friendlyError(input, status, usingToken)
+        : (input && typeof input === 'object') ? input : friendlyError('', status, usingToken);
       const titleEl = document.getElementById('errorTitle');
       if (titleEl) titleEl.textContent = title;
       document.querySelector('.error-message').textContent = message;
+
+      // For expired/invalid token, closing should redirect
+      window.redirectOnErrorClose = false;
+      const combo = (title + ' ' + message).toLowerCase();
+      const isExpiredTokenError = usingToken && (
+        combo.includes('link has expired') ||
+        combo.includes('invalid or used token') ||
+        combo.includes('token expired')
+      );
+      const closeBtn = document.getElementById('closeErrorModal');
+      if (closeBtn) {
+        if (isExpiredTokenError) {
+          window.redirectOnErrorClose = true;
+          closeBtn.textContent = 'Go to Python Support';
+        } else {
+          closeBtn.textContent = 'Try Again';
+        }
+      }
+
       document.getElementById('errorModal').classList.remove('hidden');
     }
     /* ---------------------------------------------------- */
@@ -712,7 +732,6 @@
     // --- Explicit validation message for student number (6 digits after 's') ---
     const studentNumInput = document.getElementById('student_number');
     function setStudentCustomValidation() {
-      // Only validate when Student role is active
       const isStudent = (form.role.value === 'student');
       if (!isStudent) {
         studentNumInput.setCustomValidity('');
@@ -727,21 +746,13 @@
         studentNumInput.setCustomValidity('');
       }
     }
-    // Clear message while typing and re-validate on blur/invalid
     if (studentNumInput) {
-      studentNumInput.addEventListener('input', () => {
-        studentNumInput.setCustomValidity(''); // remove old bubble while typing
-      });
+      studentNumInput.addEventListener('input', () => { studentNumInput.setCustomValidity(''); });
       studentNumInput.addEventListener('blur', setStudentCustomValidation);
       studentNumInput.addEventListener('invalid', setStudentCustomValidation);
     }
-    // Also re-run when switching roles so messages stay relevant
     const _oldToggleRole = toggleRole;
-    toggleRole = function() {
-      _oldToggleRole();
-      setStudentCustomValidation();
-    };
-    // Initial validation state
+    toggleRole = function() { _oldToggleRole(); setStudentCustomValidation(); };
     setStudentCustomValidation();
 
     const thankYouModal = document.getElementById("thankYouModal");
@@ -749,6 +760,10 @@
     const closeBtn = document.getElementById("closeModal");
     const closeErrorBtn = document.getElementById("closeErrorModal");
     const submitButton = document.getElementById("submitButton");
+
+    // flags used for redirect logic
+    let redirectOnErrorClose = false;
+    let redirectOnThankYouClose = false;
 
     form.addEventListener("submit", async (e) => { 
       e.preventDefault();
@@ -775,16 +790,10 @@
         
         if (response.ok) {
           if (linkToken) {
-            // Show the thank-you message for 7 seconds, then redirect
+            // Thank you modal + auto-redirect after 7s; clicking Close redirects immediately
             thankYouModal.classList.remove('hidden');
-            const closeBtn = document.getElementById('closeModal');
-            if (closeBtn) {
-              closeBtn.disabled = true;
-              closeBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            setTimeout(() => {
-              window.location.replace('https://pythonsupport.dtu.dk/');
-            }, 7000);
+            redirectOnThankYouClose = true;
+            setTimeout(() => { window.location.replace('https://pythonsupport.dtu.dk/'); }, 7000);
             return;
           }
           thankYouModal.classList.remove('hidden'); 
@@ -829,12 +838,24 @@
       }
     });
 
-    closeBtn.addEventListener('click', () => { thankYouModal.classList.add('hidden'); });
-    closeErrorBtn.addEventListener('click', () => { errorModal.classList.add('hidden'); });
+    // Close handlers (with redirect logic)
+    closeBtn.addEventListener('click', () => {
+      if (redirectOnThankYouClose && linkToken) {
+        window.location.replace('https://pythonsupport.dtu.dk/');
+      } else {
+        thankYouModal.classList.add('hidden');
+      }
+    });
+    closeErrorBtn.addEventListener('click', () => {
+      errorModal.classList.add('hidden');
+      if (redirectOnErrorClose && linkToken) {
+        window.location.replace('https://pythonsupport.dtu.dk/');
+      }
+    });
 
     if (linkToken) { showSurveyForm(); }
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
   </script>
 </body>
-</html>s
+</html>
