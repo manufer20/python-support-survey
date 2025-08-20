@@ -775,7 +775,16 @@
         
         if (response.ok) {
           if (linkToken) {
-            window.location.replace('https://pythonsupport.dtu.dk/');
+            // Show the thank-you message for 7 seconds, then redirect
+            thankYouModal.classList.remove('hidden');
+            const closeBtn = document.getElementById('closeModal');
+            if (closeBtn) {
+              closeBtn.disabled = true;
+              closeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            setTimeout(() => {
+              window.location.replace('https://pythonsupport.dtu.dk/');
+            }, 7000);
             return;
           }
           thankYouModal.classList.remove('hidden'); 
@@ -828,4 +837,4 @@
     else { showSurveyForm(); }
   </script>
 </body>
-</html>
+</html>s
