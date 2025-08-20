@@ -284,7 +284,8 @@
   <script type="module">
     // Logic App endpoint
     const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
-    const tokenEndpoint = "https://python-support-proxy.azurewebsites.net/api/issueToken"; // creates single-use token
+    const tokenEndpoint = "https://python-support-proxy.azurewebsites.net/api/issueToken"; // creates single-use token (for one-time links)
+    const qrSignEndpoint = "https://python-support-proxy.azurewebsites.net/api/qrRedirect"; // NEW: signs static QR URLs
     const WORKSHOP_DAY_KEY = "workshopDay";
 
     // === Supporter authentication (no hard-coded code) ===
@@ -390,7 +391,7 @@
     const analyticsPage = document.getElementById('analyticsPage');
     const resetTab = document.getElementById('resetTab');
 
-    // Generate a one-time survey link
+    // Generate a one-time survey link (unchanged)
     async function generateOneTimeLink() {
       try {
         const expiresHours = 24;
@@ -425,7 +426,7 @@
       }
     }
 
-    // === QR Generation ===
+    // === QR Generation (NOW STATIC & SIGNED) ===
     (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
       const btn = document.getElementById('btnGenerateLink');
       if (btn) btn.addEventListener('click', generateOneTimeLink);
@@ -479,6 +480,7 @@
         });
       }
 
+      // STATIC QR generator: calls backend to sign a fixed URL. Scans mint one-time tokens server-side.
       async function createQr() {
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
@@ -493,24 +495,18 @@
           qrInlineError.classList.add('hidden');
         }
         try {
-          const expiresHours = 24;
-          const resp = await fetch(tokenEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': getSavedKey()[1] || ''
-            },
-            body: JSON.stringify({ expiresHours, building_Number: bNum })
+          // Ask backend to return a SIGNED STATIC URL for printing
+          const resp = await fetch(`${qrSignEndpoint}?sign=1&b=${encodeURIComponent(String(bNum))}&wd=${qrWorkshopDay.checked ? 1 : 0}`, {
+            method: 'GET',
+            headers: { 'x-api-key': getSavedKey()[1] || '' }
           });
           if (!resp.ok) {
             const txt = await resp.text().catch(()=> '');
-            showError('Could not generate link. ' + (txt || ''), resp.status);
+            showError('Could not create static QR. ' + (txt || ''), resp.status);
             return;
           }
           const data = await resp.json();
-          const baseUrl = window.location.origin + window.location.pathname;
-          const wd = qrWorkshopDay.checked ? '&wd=1' : '';
-          const url = data.url || `${baseUrl}?t=${encodeURIComponent(data.token)}&b=${encodeURIComponent(String(bNum))}${wd}`;
+          const url = data.url; // e.g. https://.../api/qrRedirect?b=302&wd=1&sig=...
 
           // Render QR – library if present, otherwise image fallback
           qrLinkInp.value = url;
@@ -659,7 +655,7 @@
       document.querySelector('.error-message').textContent = message;
 
       // For expired/invalid token, closing should redirect
-      redirectOnErrorClose = false;
+      let redirectOnErrorClose = false;
       const combo = (title + ' ' + message).toLowerCase();
       const isExpiredTokenError = usingToken && (
         combo.includes('link has expired') ||
@@ -674,6 +670,12 @@
         } else {
           closeBtn.textContent = 'Try Again';
         }
+        closeBtn.onclick = () => {
+          document.getElementById('errorModal').classList.add('hidden');
+          if (redirectOnErrorClose && linkToken) {
+            window.location.replace('https://pythonsupport.dtu.dk/');
+          }
+        };
       }
 
       document.getElementById('errorModal').classList.remove('hidden');
@@ -758,11 +760,9 @@
     const thankYouModal = document.getElementById("thankYouModal");
     const errorModal = document.getElementById("errorModal");
     const closeBtn = document.getElementById("closeModal");
-    const closeErrorBtn = document.getElementById("closeErrorModal");
     const submitButton = document.getElementById("submitButton");
 
     // flags used for redirect logic
-    let redirectOnErrorClose = false;
     let redirectOnThankYouClose = false;
 
     form.addEventListener("submit", async (e) => { 
@@ -838,18 +838,12 @@
       }
     });
 
-    // Close handlers (with redirect logic)
+    // Close handler (with redirect logic for token)
     closeBtn.addEventListener('click', () => {
       if (redirectOnThankYouClose && linkToken) {
         window.location.replace('https://pythonsupport.dtu.dk/');
       } else {
         thankYouModal.classList.add('hidden');
-      }
-    });
-    closeErrorBtn.addEventListener('click', () => {
-      errorModal.classList.add('hidden');
-      if (redirectOnErrorClose && linkToken) {
-        window.location.replace('https://pythonsupport.dtu.dk/');
       }
     });
 
