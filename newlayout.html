@@ -606,7 +606,7 @@
       let title = "We couldn't submit your response";
       let message = 'Please try again in a moment.';
 
-      const roleNow = (document.querySelector('input[name="role"]:checked")?.value || 'student');
+      const roleNow = (document.querySelector('input[name="role"]:checked')?.value || 'student');
       if (l.includes('study number does not exist') || l.includes('student number does not exist')) {
         if (roleNow === 'employee') {
           title = 'DTU username not found';
