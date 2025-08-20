@@ -199,7 +199,7 @@
       </div>
     </div>
 
-    <!-- Analytics Page -->
+    <!-- Analytics Page (backup full-page embed) -->
     <div id="analyticsPage" class="flex-1 p-0 hidden">
       <div class="h-full w-full bg-white">
         <div class="h-full w-full">
@@ -248,6 +248,13 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
+
+      <!-- NEW: fallback helper -->
+      <div id="pbiFallback" class="hidden px-4 py-2 text-sm text-gray-600">
+        If the report doesn’t appear, your browser may be blocking third-party cookies or frame embeds.
+        <a id="pbiOpenExternal" href="#" target="_blank" rel="noopener" class="text-red-600 underline ml-1">Open in Power BI</a>
+      </div>
+
       <div class="p-0">
         <div class="w-full" style="height: calc(100vh - 200px);">
           <iframe id="pbiFrame" title="Python Support Statistics LiveVersion" class="w-full h-full" src="" data-src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowfullscreen="true"></iframe>
@@ -571,8 +578,27 @@
       const analyticsClose = document.getElementById('analyticsClose');
       const pbiFrame       = document.getElementById('pbiFrame');
 
+      let pbiLoadTimer;
       function openAnalytics() {
-        if (pbiFrame && !pbiFrame.src) { pbiFrame.src = pbiFrame.dataset.src || ''; }
+        const fb  = document.getElementById('pbiFallback');
+        const ext = document.getElementById('pbiOpenExternal');
+
+        if (pbiFrame && !pbiFrame.src) {
+          const src = pbiFrame.dataset.src || '';
+          pbiFrame.src = src;                     // lazy-load once
+          if (ext) ext.href = src || '#';
+          if (fb) fb.classList.add('hidden');
+
+          // If the iframe doesn't load quickly, show the helper.
+          clearTimeout(pbiLoadTimer);
+          pbiLoadTimer = setTimeout(() => { if (fb) fb.classList.remove('hidden'); }, 2500);
+
+          pbiFrame.addEventListener('load', () => {
+            if (fb) fb.classList.add('hidden');
+            clearTimeout(pbiLoadTimer);
+          }, { once: true });
+        }
+
         analyticsModal.classList.remove('hidden');
       }
       function closeAnalytics() { analyticsModal.classList.add('hidden'); }
