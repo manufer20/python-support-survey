@@ -6,9 +6,12 @@
   <meta name="color-scheme" content="light">
   <title>Student Satisfaction Survey</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <!-- Loosen CSP for Power BI iframe (safe to include) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 </head>
 <body class="bg-gray-50 flex min-h-screen">
-  
+
   <!-- Sidebar -->
   <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out">
     <div class="flex items-center justify-between h-16 px-4 border-b">
@@ -44,7 +47,6 @@
   <!-- Sidebar overlay -->
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-  
   <!-- Main content -->
   <div class="flex-1 flex flex-col" id="mainWrapper">
 
@@ -64,7 +66,6 @@
             <button id="btnGenerateQR" type="button" class="text-sm bg-white border border-red-500 text-red-600 px-3 py-2 rounded hover:bg-red-50">
               QR
             </button>
-            <!-- NEW: PowerBI button -->
             <button id="btnOpenAnalytics" type="button" class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-50">
               PowerBI
             </button>
@@ -76,12 +77,12 @@
             <div class="font-semibold text-gray-700">Building 302</div>
             <div class="text-sm text-gray-500">Main Python Support Office</div>
           </button>
-          
+
           <button onclick="selectBuilding(358)" class="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors text-left">
             <div class="font-semibold text-gray-700">Building 358</div>
             <div class="text-sm text-gray-500">Secondary Python Support Office</div>
           </button>
-          
+
           <!-- Custom Building Section -->
           <div class="border-2 border-gray-200 rounded-lg p-4">
             <div class="font-semibold text-gray-700 mb-2">Other Building</div>
@@ -111,11 +112,11 @@
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
         </div>
-        
+
         <form id="surveyForm" class="space-y-6">
-          <!-- Role + Student/Username + Workshop (phone-first ordering) -->
+          <!-- Role + Workshop (phone-first, workshop below student number on phones) -->
           <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
-            <!-- Roles: left on desktop, first on mobile -->
+            <!-- Roles -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
               <label class="inline-flex items-center text-gray-700">
                 <input type="radio" name="role" value="student" class="form-radio" checked />
@@ -127,17 +128,17 @@
               </label>
             </div>
 
-            <!-- Workshop: BELOW student number on phones (order-3), right side on desktop (order-2) -->
+            <!-- Workshop Yes/No -->
             <div class="order-3 sm:order-2">
               <fieldset>
                 <legend class="block text-gray-700 mb-2 font-medium">Attended workshop?</legend>
                 <div class="flex items-center gap-4 sm:justify-end">
                   <label class="inline-flex items-center text-gray-700">
-                    <input type="radio" id="workshop_yes" name="workshop" value="yes" class="form-radio h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300" />
+                    <input type="radio" id="workshop_yes" name="workshop" value="yes" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
                     <span class="ml-2">Yes</span>
                   </label>
                   <label class="inline-flex items-center text-gray-700">
-                    <input type="radio" id="workshop_no" name="workshop" value="no" class="form-radio h-5 w-5 text-red-500 focus:ring-red-500 border-gray-300" />
+                    <input type="radio" id="workshop_no" name="workshop" value="no" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
                     <span class="ml-2">No</span>
                   </label>
                 </div>
@@ -199,13 +200,13 @@
       </div>
     </div>
 
-    <!-- Analytics Page (backup full-page embed) -->
+    <!-- (Optional) Full-page Analytics backup -->
     <div id="analyticsPage" class="flex-1 p-0 hidden">
       <div class="h-full w-full bg-white">
         <div class="h-full w-full">
           <iframe loading="lazy" title="Python Support Statistics BACKUP" class="w-full h-full" style="min-height: calc(100vh - 4rem);" src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowFullScreen="true"></iframe>
         </div>
-      </div>  
+      </div>
     </div>
   </div>
 
@@ -227,7 +228,7 @@
       <button id="closeModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Close</button>
     </div>
   </div>
-  
+
   <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <div class="flex justify-center mb-3">
@@ -249,15 +250,23 @@
         </button>
       </div>
 
-      <!-- NEW: fallback helper -->
-      <div id="pbiFallback" class="hidden px-4 py-2 text-sm text-gray-600">
+      <!-- Fallback helper shown immediately; hides only if iframe loads -->
+      <div id="pbiFallback" class="px-4 py-2 text-sm text-gray-600">
         If the report doesn’t appear, your browser may be blocking third-party cookies or frame embeds.
-        <a id="pbiOpenExternal" href="#" target="_blank" rel="noopener" class="text-red-600 underline ml-1">Open in Power BI</a>
+        <a id="pbiOpenExternal"
+           href="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9"
+           target="_blank" rel="noopener" class="text-red-600 underline ml-1">Open in Power BI</a>
       </div>
 
       <div class="p-0">
         <div class="w-full" style="height: calc(100vh - 200px);">
-          <iframe id="pbiFrame" title="Python Support Statistics LiveVersion" class="w-full h-full" src="" data-src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowfullscreen="true"></iframe>
+          <iframe
+            id="pbiFrame"
+            title="Python Support Statistics LiveVersion"
+            class="w-full h-full"
+            src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9"
+            frameborder="0"
+            allowfullscreen="true"></iframe>
         </div>
       </div>
     </div>
@@ -296,7 +305,6 @@
 
       <div id="qrResult" class="hidden">
         <canvas id="qrCanvas" class="mx-auto mb-3"></canvas>
-        <!-- <img> fallback when JS library is blocked -->
         <img id="qrImg" class="mx-auto mb-3 hidden" alt="QR code"/>
         <div class="flex items-center gap-2">
           <input id="qrLink" type="text" readonly class="flex-1 border border-gray-300 p-2 rounded text-xs" />
@@ -306,20 +314,20 @@
     </div>
   </div>
 
-  <!-- Try to load the QR library; if blocked we’ll fall back to image services -->
+  <!-- QR code library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <script type="module">
-    // Logic App endpoint
-    const endpoint = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
-    const tokenEndpoint = "https://python-support-proxy.azurewebsites.net/api/issueToken"; // creates single-use token (for one-time links)
-    const qrSignEndpoint = "https://python-support-proxy.azurewebsites.net/api/qrRedirect"; // NEW: signs static QR URLs
+    // Endpoints
+    const endpoint       = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
+    const tokenEndpoint  = "https://python-support-proxy.azurewebsites.net/api/issueToken";
+    const qrSignEndpoint = "https://python-support-proxy.azurewebsites.net/api/qrRedirect";
     const WORKSHOP_DAY_KEY = "workshopDay";
 
-    // === Supporter authentication (no hard-coded code) ===
-    const STORAGE_KEY = "surveySupportAuth";   // stores "YYYY-MM-DD|key"
+    // Supporter auth (persist for the day)
+    const STORAGE_KEY = "surveySupportAuth"; // "YYYY-MM-DD|key"
 
-    // --- Reset via URL: ONLY supports ?reset=1 ---
+    // Reset via URL ?reset=1
     (function () {
       const params = new URLSearchParams(location.search);
       if (params.get('reset') === '1') {
@@ -382,17 +390,18 @@
       ? Number(localStorage.getItem('selectedBuilding'))
       : null;
 
-    const urlParams = new URLSearchParams(location.search);
-    const linkToken = urlParams.get('t') || urlParams.get('token');
-    const qpBuilding = urlParams.get('b');
+    const urlParams   = new URLSearchParams(location.search);
+    const linkToken   = urlParams.get('t') || urlParams.get('token');
+    const qpBuilding  = urlParams.get('b');
+    const qpWD        = urlParams.get('wd') === '1';
+
     if (qpBuilding) {
       selectedBuilding = Number(qpBuilding);
       localStorage.setItem('selectedBuilding', selectedBuilding);
     }
-    const qpWD = urlParams.get('wd') === '1';
-    if (linkToken) { selectedBuilding = null; }
+    if (linkToken) { selectedBuilding = null; } // one-time link should be "Online" (no building here)
 
-    // Pre-validate one-time links: if token is used/expired, show an error and lock the form
+    // Pre-validate one-time token on page load (non-blocking)
     async function verifyOneTimeToken() {
       if (!linkToken) return true;
       try {
@@ -409,18 +418,17 @@
         }
         return true;
       } catch {
-        // If we cannot verify due to network, allow proceeding; server will still block on submit
         return true;
       }
     }
 
-    // Page elements
+    // Elements
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
-    const surveyPage = document.getElementById('surveyPage');
-    const analyticsPage = document.getElementById('analyticsPage');
-    const resetTab = document.getElementById('resetTab');
+    const surveyPage            = document.getElementById('surveyPage');
+    const analyticsPage         = document.getElementById('analyticsPage');
+    const resetTab              = document.getElementById('resetTab');
 
-    // Generate a one-time survey link (always Online)
+    // Generate one-time link (always "Online")
     async function generateOneTimeLink() {
       try {
         const expiresHours = 24;
@@ -445,7 +453,7 @@
         const baseUrl = window.location.origin + window.location.pathname;
         const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
         const url = data.url || data.oneTimeUrl || `${baseUrl}?token=${encodeURIComponent(data.token)}${wd}`;
-        
+
         try { await navigator.clipboard.writeText(url); } catch {}
         alert('Discord link copied to clipboard:\n' + url);
       } catch (e) {
@@ -454,10 +462,11 @@
       }
     }
 
-    // === QR Generation (STATIC & SIGNED) ===
+    // Ready
     (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
-      const btn = document.getElementById('btnGenerateLink');
-      if (btn) btn.addEventListener('click', generateOneTimeLink);
+      // Buttons
+      const btnLink = document.getElementById('btnGenerateLink');
+      if (btnLink) btnLink.addEventListener('click', generateOneTimeLink);
 
       const wdToggle = document.getElementById('workshopDayToggle');
       if (wdToggle) {
@@ -467,6 +476,7 @@
         });
       }
 
+      // QR modal
       const qrModal   = document.getElementById('qrModal');
       const qrCreate  = document.getElementById('qrCreate');
       const qrClose   = document.getElementById('qrClose');
@@ -494,6 +504,9 @@
       }
       function closeQrModal() { qrModal.classList.add('hidden'); }
 
+      if (document.getElementById('btnGenerateQR')) {
+        document.getElementById('btnGenerateQR').addEventListener('click', openQrModal);
+      }
       qrModal.querySelectorAll('.qr-quick').forEach(btn => {
         btn.addEventListener('click', () => {
           const v = btn.getAttribute('data-building');
@@ -508,7 +521,6 @@
         });
       }
 
-      // STATIC QR generator: calls backend to sign a fixed URL. Scans mint one-time tokens server-side.
       async function createQr() {
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
@@ -523,7 +535,6 @@
           qrInlineError.classList.add('hidden');
         }
         try {
-          // Ask backend to return a SIGNED STATIC URL for printing
           const resp = await fetch(`${qrSignEndpoint}?sign=1&b=${encodeURIComponent(String(bNum))}&wd=${qrWorkshopDay.checked ? 1 : 0}`, {
             method: 'GET',
             headers: { 'x-api-key': getSavedKey()[1] || '' }
@@ -534,9 +545,8 @@
             return;
           }
           const data = await resp.json();
-          const url = data.url; // e.g. https://.../api/qrRedirect?b=302&wd=1&sig=...
+          const url = data.url; // signed static URL
 
-          // Render QR – library if present, otherwise image fallback
           qrLinkInp.value = url;
           const hasLib = !!(window.QRCode && QRCode.toCanvas);
           if (hasLib) {
@@ -555,16 +565,11 @@
               qrImg.src = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encoded}`;
             };
           }
-          if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
           qrResult.classList.remove('hidden');
         } catch (e) {
           console.error(e);
           showError('Unexpected error while generating the QR.');
         }
-      }
-
-      if (document.getElementById('btnGenerateQR')) {
-        document.getElementById('btnGenerateQR').addEventListener('click', openQrModal);
       }
       qrCreate.addEventListener('click', createQr);
       qrClose.addEventListener('click', closeQrModal);
@@ -572,45 +577,34 @@
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
 
-      // Analytics modal wiring (Building selector only)
+      // Analytics modal (src is already set; show fallback immediately; hide if iframe loads)
       const analyticsModal = document.getElementById('analyticsModal');
       const analyticsOpen  = document.getElementById('btnOpenAnalytics');
       const analyticsClose = document.getElementById('analyticsClose');
       const pbiFrame       = document.getElementById('pbiFrame');
 
-      let pbiLoadTimer;
+      let pbiLoaded = false;
       function openAnalytics() {
-        const fb  = document.getElementById('pbiFallback');
-        const ext = document.getElementById('pbiOpenExternal');
-
-        if (pbiFrame && !pbiFrame.src) {
-          const src = pbiFrame.dataset.src || '';
-          pbiFrame.src = src;                     // lazy-load once
-          if (ext) ext.href = src || '#';
-          if (fb) fb.classList.add('hidden');
-
-          // If the iframe doesn't load quickly, show the helper.
-          clearTimeout(pbiLoadTimer);
-          pbiLoadTimer = setTimeout(() => { if (fb) fb.classList.remove('hidden'); }, 2500);
-
+        const fb = document.getElementById('pbiFallback');
+        if (!pbiLoaded && pbiFrame) {
           pbiFrame.addEventListener('load', () => {
+            pbiLoaded = true;
             if (fb) fb.classList.add('hidden');
-            clearTimeout(pbiLoadTimer);
           }, { once: true });
         }
-
         analyticsModal.classList.remove('hidden');
+        setTimeout(() => { if (!pbiLoaded && fb) fb.classList.remove('hidden'); }, 200);
       }
       function closeAnalytics() { analyticsModal.classList.add('hidden'); }
 
-      if (analyticsOpen) analyticsOpen.addEventListener('click', openAnalytics);
+      if (analyticsOpen)  analyticsOpen.addEventListener('click', openAnalytics);
       if (analyticsClose) analyticsClose.addEventListener('click', closeAnalytics);
       if (analyticsModal) analyticsModal.addEventListener('click', (e) => {
         if (e.target === analyticsModal) closeAnalytics();
       });
     });
 
-    // Building selection functions
+    // Building selection helpers
     function selectBuilding(buildingNumber) {
       selectedBuilding = buildingNumber;
       localStorage.setItem('selectedBuilding', buildingNumber);
@@ -640,8 +634,8 @@
       const workshopYes = document.getElementById('workshop_yes');
       const workshopNo  = document.getElementById('workshop_no');
       if (workshopYes && workshopNo) {
-        workshopYes.checked = !!preferWD;   // preselect Yes only when workshop is preselected
-        workshopNo.checked  = !preferWD;    // otherwise default to No
+        workshopYes.checked = !!preferWD;
+        workshopNo.checked  = !preferWD; // default to No unless Workshop preselected
       }
       if (linkToken) { verifyOneTimeToken(); }
     }
@@ -650,17 +644,48 @@
     window.handleEnterKey = handleEnterKey;
     window.showBuildingSelection = showBuildingSelection;
 
-    if (resetTab) {
-      resetTab.addEventListener('click', (e) => {
-        e.preventDefault();
-        const url = new URL(location.href);
-        url.searchParams.set('reset', '1');
-        url.hash = '';
-        location.href = url.pathname + '?' + url.searchParams.toString();
-      });
-    }
+    // Sidebar & nav
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const openSidebarBtn = document.getElementById('openSidebar');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
+    const surveyTab = document.getElementById('surveyTab');
+    const analyticsTab = document.getElementById('analyticsTab');
 
-    /* ---------- Friendly error handling & modal ---------- */
+    function openSidebar() {
+      sidebar.classList.remove('-translate-x-full');
+      sidebarOverlay.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closeSidebar() {
+      sidebar.classList.add('-translate-x-full');
+      sidebarOverlay.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+    if (openSidebarBtn)  openSidebarBtn.addEventListener('click', openSidebar);
+    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+    if (sidebarOverlay)  sidebarOverlay.addEventListener('click', closeSidebar);
+
+    function switchToSurvey(e) {
+      if (e) e.preventDefault();
+      if (selectedBuilding === null) showBuildingSelection(); else showSurveyForm();
+      surveyTab.classList.add('border-r-4','border-red-500','bg-gray-50');
+      analyticsTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
+      closeSidebar();
+    }
+    function switchToAnalytics(e) {
+      if (e) e.preventDefault();
+      buildingSelectionPage.classList.add('hidden');
+      surveyPage.classList.add('hidden');
+      analyticsPage.classList.remove('hidden');
+      analyticsTab.classList.add('border-r-4','border-red-500','bg-gray-50');
+      surveyTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
+      closeSidebar();
+    }
+    if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
+    if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
+
+    // Error helpers
     function friendlyError(raw, status = 0, usingToken = false) {
       const text = (typeof raw === 'string') ? raw : (raw?.message || '');
       const l = (text || '').toLowerCase();
@@ -682,30 +707,14 @@
       } else if (l.includes('unauthorized')) {
         title = 'Not authorised';
         message = 'Your session has expired. Please refresh and try again.';
-      } else if (l.includes('triggerinputschemamismatch') || l.includes('invalid type') || l.includes('schema')) {
-        title = 'Form not recognised';
-        message = 'Some information was in the wrong format. Please refresh the page and try again.';
       } else if (status >= 500) {
         title = 'Service temporarily unavailable';
         message = 'We are experiencing a temporary problem. Please try again in a minute.';
       } else if (status === 429) {
         title = 'Too many attempts';
         message = 'Please wait a moment and try again.';
-      } else if (l.includes('could not generate link')) {
-        title = 'Could not generate link';
-        message = 'Please confirm you are signed in and try again.';
-      } else if (l.includes('qr generator failed')) {
-        title = 'QR generator unavailable';
-        message = 'Network access to the QR service is blocked. Try again or use the copy-link option.';
       } else if (text && text.trim()) {
-        try {
-          const maybe = JSON.parse(text);
-          if (maybe && typeof maybe.message === 'string') {
-            message = maybe.message;
-          } else {
-            message = text;
-          }
-        } catch { message = text; }
+        message = text;
       }
       return { title, message };
     }
@@ -719,7 +728,7 @@
       if (titleEl) titleEl.textContent = title;
       document.querySelector('.error-message').textContent = message;
 
-      // For expired/invalid token, closing should redirect
+      // If token expired, let user go to Python Support
       let redirectOnErrorClose = false;
       const combo = (title + ' ' + message).toLowerCase();
       const isExpiredTokenError = usingToken && (
@@ -745,9 +754,8 @@
 
       document.getElementById('errorModal').classList.remove('hidden');
     }
-    /* ---------------------------------------------------- */
 
-    // CSV autocomplete loader (unchanged)
+    // CSV autocomplete loader
     (async () => {
       try {
         const res = await fetch('./courses.csv');
@@ -796,14 +804,11 @@
     }
     toggleRole();
 
-    // --- Explicit validation message for student number (6 digits after 's') ---
+    // Student number validation hints
     const studentNumInput = document.getElementById('student_number');
     function setStudentCustomValidation() {
       const isStudent = (form.role.value === 'student');
-      if (!isStudent) {
-        studentNumInput.setCustomValidity('');
-        return;
-      }
+      if (!isStudent) { studentNumInput.setCustomValidity(''); return; }
       const v = (studentNumInput.value || '').trim();
       if (!v) {
         studentNumInput.setCustomValidity("Please enter your student number: type the 6 digits after 's' (e.g. s123456).");
@@ -823,19 +828,17 @@
     setStudentCustomValidation();
 
     const thankYouModal = document.getElementById("thankYouModal");
-    const errorModal = document.getElementById("errorModal");
     const closeBtn = document.getElementById("closeModal");
     const submitButton = document.getElementById("submitButton");
 
-    // flags used for redirect logic
     let redirectOnThankYouClose = false;
 
-    form.addEventListener("submit", async (e) => { 
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       submitButton.disabled = true;
       submitButton.textContent = 'Submitting...';
       submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-      
+
       const isStudent = form.role.value === 'student';
       const payload = {
         role: form.role.value,
@@ -852,16 +855,16 @@
         const headers = { "Content-Type": "application/json" };
         if (linkToken) { headers["x-token"] = linkToken; } else { headers["x-api-key"] = getSavedKey()[1] || ""; }
         const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
-        
+
         if (response.ok) {
           if (linkToken) {
-            // Thank you modal + auto-redirect after 7s; clicking Close redirects immediately
+            // Token flow: thank you + redirect to Python Support (7s or immediate on Close)
             thankYouModal.classList.remove('hidden');
             redirectOnThankYouClose = true;
             setTimeout(() => { window.location.replace('https://pythonsupport.dtu.dk/'); }, 7000);
             return;
           }
-          thankYouModal.classList.remove('hidden'); 
+          thankYouModal.classList.remove('hidden');
           form.reset();
           form.role.value = 'student';
           toggleRole();
@@ -877,7 +880,7 @@
           document.getElementById('student_number').value = '';
           document.getElementById('student_number').focus();
           document.activeElement?.blur();
-          setTimeout(() => { thankYouModal.classList.add('hidden'); }, 3000); 
+          setTimeout(() => { thankYouModal.classList.add('hidden'); }, 3000);
         } else {
           let raw = '';
           try {
@@ -903,7 +906,7 @@
       }
     });
 
-    // Close handler (with redirect logic for token)
+    // Thank-you close behavior
     closeBtn.addEventListener('click', () => {
       if (redirectOnThankYouClose && linkToken) {
         window.location.replace('https://pythonsupport.dtu.dk/');
@@ -912,9 +915,21 @@
       }
     });
 
+    // Init page
     if (linkToken) { showSurveyForm(); }
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
+
+    // Basic error modal close (fallback)
+    function showError(message) {
+      document.querySelector('.error-message').textContent = (typeof message === 'string') ? message : (message?.message || 'An error occurred.');
+      document.getElementById('errorModal').classList.remove('hidden');
+      const btn = document.getElementById('closeErrorModal');
+      btn.onclick = () => document.getElementById('errorModal').classList.add('hidden');
+    }
+
+    // Sidebar hamburger (optional; add the button in header if you want)
+    // <button id="openSidebar">...</button> can be added to your header if needed.
   </script>
 </body>
 </html>
