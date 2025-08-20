@@ -28,7 +28,7 @@
       </a>
       <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2z"></path>
         </svg>
         Analytics
       </a>
@@ -53,16 +53,20 @@
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Select Your Building</h2>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3 sm:gap-4">
             <label class="inline-flex items-center text-gray-700">
               <input id="workshopDayToggle" type="checkbox" class="h-5 w-5 text-red-500 border-gray-300 rounded">
-              <span class="ml-2 whitespace-nowrap">Workshop Day</span>
+              <span class="ml-2 whitespace-nowrap">Workshop</span>
             </label>
             <button id="btnGenerateLink" type="button" class="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">
-              Generate one-time link
+              Discord link
             </button>
             <button id="btnGenerateQR" type="button" class="text-sm bg-white border border-red-500 text-red-600 px-3 py-2 rounded hover:bg-red-50">
-              Generate QR
+              QR
+            </button>
+            <!-- NEW: PowerBI button -->
+            <button id="btnOpenAnalytics" type="button" class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-50">
+              PowerBI
             </button>
           </div>
         </div>
@@ -235,6 +239,23 @@
     </div>
   </div>
 
+  <!-- Analytics Modal (opens from Building Selector) -->
+  <div id="analyticsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-5xl">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <h3 class="text-lg font-semibold text-gray-800">PowerBI Analytics</h3>
+        <button id="analyticsClose" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Close">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-0">
+        <div class="w-full" style="height: calc(100vh - 200px);">
+          <iframe id="pbiFrame" title="Python Support Statistics LiveVersion" class="w-full h-full" src="" data-src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowfullscreen="true"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- QR Modal -->
   <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -392,7 +413,7 @@
     const analyticsPage = document.getElementById('analyticsPage');
     const resetTab = document.getElementById('resetTab');
 
-    // Generate a one-time survey link (unchanged)
+    // Generate a one-time survey link (always Online)
     async function generateOneTimeLink() {
       try {
         const expiresHours = 24;
@@ -418,16 +439,15 @@
         const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
         const url = data.url || data.oneTimeUrl || `${baseUrl}?token=${encodeURIComponent(data.token)}${wd}`;
         
-
         try { await navigator.clipboard.writeText(url); } catch {}
-        alert('One-time survey link copied to clipboard:\n' + url);
+        alert('Discord link copied to clipboard:\n' + url);
       } catch (e) {
         console.error(e);
         showError('Unexpected error while generating the link.');
       }
     }
 
-    // === QR Generation (NOW STATIC & SIGNED) ===
+    // === QR Generation (STATIC & SIGNED) ===
     (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
       const btn = document.getElementById('btnGenerateLink');
       if (btn) btn.addEventListener('click', generateOneTimeLink);
@@ -544,6 +564,24 @@
       qrCopy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
+
+      // Analytics modal wiring (Building selector only)
+      const analyticsModal = document.getElementById('analyticsModal');
+      const analyticsOpen  = document.getElementById('btnOpenAnalytics');
+      const analyticsClose = document.getElementById('analyticsClose');
+      const pbiFrame       = document.getElementById('pbiFrame');
+
+      function openAnalytics() {
+        if (pbiFrame && !pbiFrame.src) { pbiFrame.src = pbiFrame.dataset.src || ''; }
+        analyticsModal.classList.remove('hidden');
+      }
+      function closeAnalytics() { analyticsModal.classList.add('hidden'); }
+
+      if (analyticsOpen) analyticsOpen.addEventListener('click', openAnalytics);
+      if (analyticsClose) analyticsClose.addEventListener('click', closeAnalytics);
+      if (analyticsModal) analyticsModal.addEventListener('click', (e) => {
+        if (e.target === analyticsModal) closeAnalytics();
+      });
     });
 
     // Building selection functions
@@ -576,7 +614,7 @@
       const workshopYes = document.getElementById('workshop_yes');
       const workshopNo  = document.getElementById('workshop_no');
       if (workshopYes && workshopNo) {
-        workshopYes.checked = !!preferWD;   // preselect Yes only when workshop day is preselected
+        workshopYes.checked = !!preferWD;   // preselect Yes only when workshop is preselected
         workshopNo.checked  = !preferWD;    // otherwise default to No
       }
       if (linkToken) { verifyOneTimeToken(); }
