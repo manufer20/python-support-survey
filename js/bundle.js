@@ -181,8 +181,13 @@ class AuthManager {
     const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || 
                            new URLSearchParams(window.location.search).get('token');
     
-    // Temporarily disabled password protection
-    this.hideLogin();
+    if (hasOneTimeToken) {
+      this.hideLogin();
+    } else if (this.isAuthValid()) {
+      this.hideLogin();
+    } else {
+      this.showLogin();
+    }
   }
 
   setupLoginHandler() {
@@ -260,9 +265,18 @@ class BuildingManager {
 
   showBuildingSelection() {
     localStorage.removeItem(CONFIG.storage.building);
+    this.selectedBuilding = null;
+    
     document.getElementById('buildingSelectionPage').classList.remove('hidden');
     document.getElementById('surveyPage').classList.add('hidden');
     document.getElementById('analyticsPage').classList.add('hidden');
+    
+    // Preserve Workshop Day checkbox state
+    const workshopToggle = document.getElementById('workshopDayToggle');
+    if (workshopToggle) {
+      const isWorkshopDay = localStorage.getItem(CONFIG.storage.workshopDay) === 'true';
+      workshopToggle.checked = isWorkshopDay;
+    }
   }
 
   showSurveyForm() {
@@ -285,15 +299,14 @@ class BuildingManager {
   }
 
   setupEventListeners() {
-    // Reset tab
-    const resetTab = document.getElementById('resetTab');
-    if (resetTab) {
-      resetTab.addEventListener('click', (e) => {
-        e.preventDefault();
-        const url = new URL(location.href);
-        url.searchParams.set('reset', '1');
-        url.hash = '';
-        location.href = url.pathname + '?' + url.searchParams.toString();
+    // Note: Back tab navigation is now handled in app.js
+    
+    // Workshop day toggle
+    const wdToggle = document.getElementById('workshopDayToggle');
+    if (wdToggle) {
+      wdToggle.checked = localStorage.getItem(CONFIG.storage.workshopDay) === 'true';
+      wdToggle.addEventListener('change', () => {
+        localStorage.setItem(CONFIG.storage.workshopDay, String(wdToggle.checked));
       });
     }
 
@@ -575,12 +588,12 @@ class KioskManager {
     this.addKioskToggle();
   }
 
-  enableKioskMode() {
+  async enableKioskMode() {
     this.isKioskMode = true;
     document.body.classList.add('kiosk-mode');
     
     // Request fullscreen
-    this.requestFullscreen();
+    await this.requestFullscreen();
     
     // Disable context menu
     this.disableContextMenu();
@@ -638,15 +651,60 @@ class KioskManager {
     console.log('Kiosk mode disabled');
   }
 
-  requestFullscreen() {
+  async requestFullscreen() {
     const element = document.documentElement;
-    if (element.requestFullscreen) {
-      element.requestFullscreen();
-    } else if (element.webkitRequestFullscreen) {
-      element.webkitRequestFullscreen();
-    } else if (element.msRequestFullscreen) {
-      element.msRequestFullscreen();
+    
+    try {
+      if (element.requestFullscreen) {
+        await element.requestFullscreen();
+        console.log('Fullscreen activated via requestFullscreen');
+      } else if (element.webkitRequestFullscreen) {
+        await element.webkitRequestFullscreen();
+        console.log('Fullscreen activated via webkitRequestFullscreen');
+      } else if (element.msRequestFullscreen) {
+        await element.msRequestFullscreen();
+        console.log('Fullscreen activated via msRequestFullscreen');
+      } else {
+        console.warn('Fullscreen API not supported by this browser');
+      }
+    } catch (error) {
+      console.error('Fullscreen request failed:', error);
+      
+      // Show user-friendly message if fullscreen fails
+      if (error.name === 'NotAllowedError') {
+        console.warn('Fullscreen was denied by user or browser policy');
+        this.showFullscreenMessage();
+      } else {
+        console.warn('Fullscreen request failed with error:', error.message);
+      }
     }
+  }
+
+  showFullscreenMessage() {
+    const message = document.createElement('div');
+    message.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3b82f6;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      z-index: 10000;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      max-width: 300px;
+    `;
+    message.textContent = 'For the best tablet experience, allow fullscreen when prompted or press F11';
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 5 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.remove();
+      }
+    }, 5000);
   }
 
   disableContextMenu() {
@@ -744,19 +802,61 @@ class KioskManager {
     toggle.title = 'Enter Tablet Mode';
     toggle.id = 'kioskToggle';
     
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', async () => {
       if (this.isKioskMode) {
         this.disableKioskMode();
         toggle.innerHTML = 'Enter Tablet Mode';
         toggle.title = 'Enter Tablet Mode';
       } else {
-        this.enableKioskMode();
+        await this.enableKioskMode();
         toggle.innerHTML = 'Exit Tablet Mode';
         toggle.title = 'Exit Tablet Mode';
       }
     });
     
     document.body.appendChild(toggle);
+    
+    // Update button visibility based on current page
+    this.updateKioskToggleVisibility();
+    
+    // Listen for page changes to show/hide toggle
+    this.setupPageChangeListeners();
+  }
+
+  updateKioskToggleVisibility() {
+    const toggle = document.getElementById('kioskToggle');
+    if (!toggle) return;
+    
+    // Show only when survey form is visible
+    const surveyPage = document.getElementById('surveyPage');
+    const buildingSelectionPage = document.getElementById('buildingSelectionPage');
+    
+    const isSurveyVisible = surveyPage && !surveyPage.classList.contains('hidden');
+    const isBuildingSelectionVisible = buildingSelectionPage && !buildingSelectionPage.classList.contains('hidden');
+    
+    if (isSurveyVisible && !isBuildingSelectionVisible) {
+      toggle.style.display = 'block';
+    } else {
+      toggle.style.display = 'none';
+    }
+  }
+
+  setupPageChangeListeners() {
+    // Use MutationObserver to watch for page visibility changes
+    const observer = new MutationObserver(() => {
+      this.updateKioskToggleVisibility();
+    });
+    
+    const surveyPage = document.getElementById('surveyPage');
+    const buildingSelectionPage = document.getElementById('buildingSelectionPage');
+    
+    if (surveyPage) {
+      observer.observe(surveyPage, { attributes: true, attributeFilter: ['class'] });
+    }
+    
+    if (buildingSelectionPage) {
+      observer.observe(buildingSelectionPage, { attributes: true, attributeFilter: ['class'] });
+    }
   }
 
   setupHiddenExit() {
@@ -897,6 +997,18 @@ class SurveyApp {
       this.showAnalyticsSection();
       closeSidebar();
     });
+
+    document.getElementById('logoutTab')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.logout();
+      closeSidebar();
+    });
+
+    // Back to Setup button on survey form
+    document.getElementById('backToSetupBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.showBuildingSelection();
+    });
   }
 
   showSurveySection() {
@@ -930,6 +1042,17 @@ class SurveyApp {
     document.getElementById('analyticsTab')?.classList.add('active');
   }
 
+  showBuildingSelection() {
+    // Go back to building selection, preserving workshop day setting
+    this.buildingManager.showBuildingSelection();
+    
+    // Update active tab to Survey (since building selection is part of survey flow)
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    document.getElementById('surveyTab')?.classList.add('active');
+  }
+
   initializeAppState() {
     // Check authentication status
     this.authManager.checkAuthStatus();
@@ -940,11 +1063,25 @@ class SurveyApp {
     
     if (linkToken) {
       this.buildingManager.showSurveyForm();
-    } else if (this.buildingManager.getSelectedBuilding() === null) {
-      this.buildingManager.showBuildingSelection();
+      this.surveyManager.verifyOneTimeToken();
     } else {
-      this.buildingManager.showSurveyForm();
+      // Always start with building selection for regular visitors
+      // This ensures fresh users always see the building selection first
+      this.buildingManager.showBuildingSelection();
     }
+  }
+
+  logout() {
+    // Clear authentication from localStorage
+    localStorage.removeItem('surveySupportAuth');
+    localStorage.removeItem('selectedBuilding');
+    localStorage.removeItem('workshopDay');
+    
+    // Show login modal
+    this.authManager.showLogin();
+    
+    // Return to building selection
+    this.showBuildingSelection();
   }
 }
 

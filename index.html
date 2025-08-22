@@ -42,11 +42,11 @@
         </svg>
         Analytics
       </a>
-      <a href="#" id="resetTab" class="sidebar-nav-item">
+      <a href="#" id="logoutTab" class="sidebar-nav-item">
         <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-5.292M20 14a8 8 0 01-14 5.292"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
         </svg>
-        Reset / Logout
+        Logout
       </a>
     </nav>
   </div>
@@ -78,7 +78,7 @@
               <span class="ml-2 whitespace-nowrap">Workshop Day</span>
             </label>
             <button id="btnGenerateLink" type="button" class="btn-primary btn-small">
-              Generate one-time link
+              Discord link
             </button>
             <button id="btnGenerateQR" type="button" class="btn-secondary btn-small">
               Generate QR
@@ -125,6 +125,12 @@
       <div class="content-card">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
+          <button id="backToSetupBtn" type="button" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back to Setup
+          </button>
         </div>
         
         <form id="surveyForm" class="survey-form">

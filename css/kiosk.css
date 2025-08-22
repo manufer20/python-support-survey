@@ -61,6 +61,13 @@
   font-size: 1.1rem;
 }
 
+/* Back to Setup button styling for better visibility */
+#backToSetupBtn {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+}
+
+
 .kiosk-mode input,
 .kiosk-mode select {
   min-height: 48px;
@@ -79,6 +86,11 @@
 
 /* Hide elements in kiosk mode */
 .kiosk-mode .kiosk-hide {
+  display: none !important;
+}
+
+/* Hide back to setup button in kiosk mode - users are locked into survey flow */
+.kiosk-mode #backToSetupBtn {
   display: none !important;
 }
 

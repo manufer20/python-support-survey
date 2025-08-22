@@ -18,12 +18,12 @@ export class KioskManager {
     this.addKioskToggle();
   }
 
-  enableKioskMode() {
+  async enableKioskMode() {
     this.isKioskMode = true;
     document.body.classList.add('kiosk-mode');
     
     // Request fullscreen
-    this.requestFullscreen();
+    await this.requestFullscreen();
     
     // Disable context menu
     this.disableContextMenu();
@@ -81,15 +81,60 @@ export class KioskManager {
     console.log('Kiosk mode disabled');
   }
 
-  requestFullscreen() {
+  async requestFullscreen() {
     const element = document.documentElement;
-    if (element.requestFullscreen) {
-      element.requestFullscreen();
-    } else if (element.webkitRequestFullscreen) {
-      element.webkitRequestFullscreen();
-    } else if (element.msRequestFullscreen) {
-      element.msRequestFullscreen();
+    
+    try {
+      if (element.requestFullscreen) {
+        await element.requestFullscreen();
+        console.log('Fullscreen activated via requestFullscreen');
+      } else if (element.webkitRequestFullscreen) {
+        await element.webkitRequestFullscreen();
+        console.log('Fullscreen activated via webkitRequestFullscreen');
+      } else if (element.msRequestFullscreen) {
+        await element.msRequestFullscreen();
+        console.log('Fullscreen activated via msRequestFullscreen');
+      } else {
+        console.warn('Fullscreen API not supported by this browser');
+      }
+    } catch (error) {
+      console.error('Fullscreen request failed:', error);
+      
+      // Show user-friendly message if fullscreen fails
+      if (error.name === 'NotAllowedError') {
+        console.warn('Fullscreen was denied by user or browser policy');
+        this.showFullscreenMessage();
+      } else {
+        console.warn('Fullscreen request failed with error:', error.message);
+      }
     }
+  }
+
+  showFullscreenMessage() {
+    const message = document.createElement('div');
+    message.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3b82f6;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      z-index: 10000;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      max-width: 300px;
+    `;
+    message.textContent = 'For the best tablet experience, allow fullscreen when prompted or press F11';
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 5 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.remove();
+      }
+    }, 5000);
   }
 
   disableContextMenu() {
@@ -194,19 +239,61 @@ export class KioskManager {
     toggle.title = 'Enter Tablet Mode';
     toggle.id = 'kioskToggle';
     
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', async () => {
       if (this.isKioskMode) {
         this.disableKioskMode();
         toggle.innerHTML = 'Enter Tablet Mode';
         toggle.title = 'Enter Tablet Mode';
       } else {
-        this.enableKioskMode();
+        await this.enableKioskMode();
         toggle.innerHTML = 'Exit Tablet Mode';
         toggle.title = 'Exit Tablet Mode';
       }
     });
     
     document.body.appendChild(toggle);
+    
+    // Update button visibility based on current page
+    this.updateKioskToggleVisibility();
+    
+    // Listen for page changes to show/hide toggle
+    this.setupPageChangeListeners();
+  }
+
+  updateKioskToggleVisibility() {
+    const toggle = document.getElementById('kioskToggle');
+    if (!toggle) return;
+    
+    // Show only when survey form is visible
+    const surveyPage = document.getElementById('surveyPage');
+    const buildingSelectionPage = document.getElementById('buildingSelectionPage');
+    
+    const isSurveyVisible = surveyPage && !surveyPage.classList.contains('hidden');
+    const isBuildingSelectionVisible = buildingSelectionPage && !buildingSelectionPage.classList.contains('hidden');
+    
+    if (isSurveyVisible && !isBuildingSelectionVisible) {
+      toggle.style.display = 'block';
+    } else {
+      toggle.style.display = 'none';
+    }
+  }
+
+  setupPageChangeListeners() {
+    // Use MutationObserver to watch for page visibility changes
+    const observer = new MutationObserver(() => {
+      this.updateKioskToggleVisibility();
+    });
+    
+    const surveyPage = document.getElementById('surveyPage');
+    const buildingSelectionPage = document.getElementById('buildingSelectionPage');
+    
+    if (surveyPage) {
+      observer.observe(surveyPage, { attributes: true, attributeFilter: ['class'] });
+    }
+    
+    if (buildingSelectionPage) {
+      observer.observe(buildingSelectionPage, { attributes: true, attributeFilter: ['class'] });
+    }
   }
 
   // Auto-return to survey after timeout

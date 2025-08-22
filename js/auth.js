@@ -52,9 +52,6 @@ export class AuthManager {
     const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || 
                            new URLSearchParams(window.location.search).get('token');
     
-    // Temporarily disabled password protection
-    this.hideLogin();
-    /*
     if (hasOneTimeToken) {
       this.hideLogin();
     } else if (this.isAuthValid()) {
@@ -62,7 +59,6 @@ export class AuthManager {
     } else {
       this.showLogin();
     }
-    */
   }
 
   setupLoginHandler() {

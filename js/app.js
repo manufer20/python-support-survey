@@ -4,6 +4,7 @@ import { BuildingManager } from './building.js';
 import { SurveyManager } from './survey.js';
 import { QRManager } from './qr.js';
 import { LinkManager } from './links.js';
+import { KioskManager } from './kiosk.js';
 
 class SurveyApp {
   constructor() {
@@ -17,6 +18,7 @@ class SurveyApp {
     this.surveyManager = new SurveyManager(this.authManager, this.buildingManager);
     this.qrManager = new QRManager(this.authManager, this.buildingManager);
     this.linkManager = new LinkManager(this.authManager, this.buildingManager);
+    this.kioskManager = new KioskManager();
     
     // Setup sidebar
     this.setupSidebar();
@@ -55,18 +57,51 @@ class SurveyApp {
       e.preventDefault();
       this.showAnalyticsSection();
     });
+
+    document.getElementById('logoutTab')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.logout();
+    });
+
+    // Back to Setup button on survey form
+    document.getElementById('backToSetupBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.showBuildingSelection();
+    });
   }
 
   showSurveySection() {
-    document.getElementById('buildingSelectionPage')?.classList.remove('hidden');
-    document.getElementById('surveyPage')?.classList.add('hidden');
-    document.getElementById('analyticsPage')?.classList.add('hidden');
+    // Show building selection if no building selected, otherwise show survey form
+    const selectedBuilding = this.buildingManager.getSelectedBuilding();
+    if (selectedBuilding === null) {
+      this.showBuildingSelection();
+    } else {
+      document.getElementById('buildingSelectionPage')?.classList.add('hidden');
+      document.getElementById('surveyPage')?.classList.remove('hidden');
+      document.getElementById('analyticsPage')?.classList.add('hidden');
+    }
     
     // Update active tab
     document.querySelectorAll('.sidebar-nav-item').forEach(item => {
       item.classList.remove('active');
     });
     document.getElementById('surveyTab')?.classList.add('active');
+  }
+
+  showBuildingSelection() {
+    // Clear selected building and show building selection
+    document.getElementById('buildingSelectionPage')?.classList.remove('hidden');
+    document.getElementById('surveyPage')?.classList.add('hidden');
+    document.getElementById('analyticsPage')?.classList.add('hidden');
+    
+    // Update active tab to Survey (since building selection is part of survey flow)
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    document.getElementById('surveyTab')?.classList.add('active');
+    
+    // Preserve workshop day setting but clear building selection
+    // Note: We don't clear localStorage selectedBuilding here to allow users to go back
   }
 
   showAnalyticsSection() {
@@ -92,11 +127,24 @@ class SurveyApp {
     if (linkToken) {
       this.buildingManager.showSurveyForm();
       this.surveyManager.verifyOneTimeToken();
-    } else if (this.buildingManager.getSelectedBuilding() === null) {
-      this.buildingManager.showBuildingSelection();
     } else {
-      this.buildingManager.showSurveyForm();
+      // Always start with building selection for regular visitors
+      // This ensures fresh users always see the building selection first
+      this.buildingManager.showBuildingSelection();
     }
+  }
+
+  logout() {
+    // Clear authentication from localStorage
+    localStorage.removeItem('surveySupportAuth');
+    localStorage.removeItem('selectedBuilding');
+    localStorage.removeItem('workshopDay');
+    
+    // Show login modal
+    this.authManager.showLogin();
+    
+    // Return to building selection
+    this.showBuildingSelection();
   }
 }
 

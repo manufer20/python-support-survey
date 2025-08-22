@@ -50,9 +50,18 @@ export class BuildingManager {
 
   showBuildingSelection() {
     localStorage.removeItem(CONFIG.storage.building);
+    this.selectedBuilding = null;
+    
     document.getElementById('buildingSelectionPage').classList.remove('hidden');
     document.getElementById('surveyPage').classList.add('hidden');
     document.getElementById('analyticsPage').classList.add('hidden');
+    
+    // Preserve Workshop Day checkbox state
+    const workshopToggle = document.getElementById('workshopDayToggle');
+    if (workshopToggle) {
+      const isWorkshopDay = localStorage.getItem(CONFIG.storage.workshopDay) === 'true';
+      workshopToggle.checked = isWorkshopDay;
+    }
   }
 
   showSurveyForm() {
@@ -75,17 +84,8 @@ export class BuildingManager {
   }
 
   setupEventListeners() {
-    // Reset tab
-    const resetTab = document.getElementById('resetTab');
-    if (resetTab) {
-      resetTab.addEventListener('click', (e) => {
-        e.preventDefault();
-        const url = new URL(location.href);
-        url.searchParams.set('reset', '1');
-        url.hash = '';
-        location.href = url.pathname + '?' + url.searchParams.toString();
-      });
-    }
+    // Note: Back tab navigation is now handled in app.js
+    // Workshop day toggle is handled in links.js
 
     // Make methods available globally
     window.selectBuilding = (buildingNumber) => this.selectBuilding(buildingNumber);
