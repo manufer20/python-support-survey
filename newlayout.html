@@ -26,14 +26,18 @@
     .kiosk-entry:hover{ background:#111; }
     .kiosk-mode .kiosk-entry{ display:none; }
 
-    /* Invisible exit hot-corner (only in kiosk mode) */
-    .kiosk-exit{ display:none; position:fixed; left:0; top:0; width:48px; height:48px; z-index:70; background:transparent; cursor:pointer; }
+    /* Invisible exit hot-corner (TOP RIGHT) only in kiosk mode */
+    .kiosk-exit{ display:none; position:fixed; right:0; top:0; width:48px; height:48px; z-index:70; background:transparent; cursor:pointer; }
     .kiosk-exit:focus{ outline:2px solid rgba(185,28,28,.6); outline-offset:2px; }
     .kiosk-mode .kiosk-exit{ display:block; }
 
-    /* Hide admin/side UI in kiosk */
+    /* Hide admin/side UI and prevent leaving survey in kiosk */
     .kiosk-mode #adminControls{ display:none !important; }
     .kiosk-mode #sidebar, .kiosk-mode #sidebarOverlay{ display:none !important; }
+
+    /* In kiosk, ensure building selector & analytics stay hidden and inert */
+    .kiosk-mode #buildingSelectionPage,
+    .kiosk-mode #analyticsPage { display:none !important; }
   </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
@@ -136,7 +140,12 @@
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
       <div class="w-full max-w-xl md:max-w-3xl mx_auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
+          <div class="flex items-center gap-2">
+            <!-- Back to selector (hidden on token links and in kiosk mode) -->
+            <button id="backToSelector" class="text-sm text-gray-600 hover:text-gray-800 underline">Back to selector</button>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-700 text-center flex-1">Student Satisfaction Survey</h2>
+          <div style="width:100px"></div>
         </div>
 
         <form id="surveyForm" class="space-y-6">
@@ -366,9 +375,11 @@
     })();
 
     function getSavedKey() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return [null, null];
-      return saved.split("|");
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return [null, null];
+        return saved.split("|");
+      } catch { return [null, null]; }
     }
     function isAuthValid() {
       const [date] = getSavedKey();
@@ -378,7 +389,6 @@
     function showLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
       document.getElementById("mainWrapper").classList.add("pointer-events-none", "opacity-40");
-      // Autofocus the password field
       setTimeout(() => {
         const inp = document.getElementById("accessCodeInput");
         if (inp) { inp.focus(); inp.select(); }
@@ -410,7 +420,7 @@
 
       if (ok) {
         const today = new Date().toISOString().slice(0, 10);
-        localStorage.setItem(STORAGE_KEY, `${today}|${input}`);
+        try { localStorage.setItem(STORAGE_KEY, `${today}|${input}`); } catch {}
         hideLogin();
         document.getElementById("accessCodeInput").value = "";
       } else {
@@ -426,9 +436,12 @@
       }
     });
 
-    let selectedBuilding = localStorage.getItem('selectedBuilding')
-      ? Number(localStorage.getItem('selectedBuilding'))
-      : null;
+    let selectedBuilding = (()=>{
+      try {
+        const v = localStorage.getItem('selectedBuilding');
+        return v ? Number(v) : null;
+      } catch { return null; }
+    })();
 
     const urlParams   = new URLSearchParams(location.search);
     const linkToken   = urlParams.get('t') || urlParams.get('token');
@@ -437,7 +450,7 @@
 
     if (qpBuilding) {
       selectedBuilding = Number(qpBuilding);
-      localStorage.setItem('selectedBuilding', selectedBuilding);
+      try { localStorage.setItem('selectedBuilding', selectedBuilding); } catch {}
     }
     if (linkToken) { selectedBuilding = null; } // one-time link should be "Online" (no building here)
 
@@ -467,9 +480,11 @@
     const surveyPage            = document.getElementById('surveyPage');
     const analyticsPage         = document.getElementById('analyticsPage');
     const resetTab              = document.getElementById('resetTab');
+    const backBtn               = document.getElementById('backToSelector');
 
     // Generate one-time link (always "Online")
     async function generateOneTimeLink() {
+      if (isKiosk()) return; // locked
       try {
         const expiresHours = 24;
         const buildingPayload = 'Online';
@@ -510,9 +525,9 @@
 
       const wdToggle = document.getElementById('workshopDayToggle');
       if (wdToggle) {
-        wdToggle.checked = localStorage.getItem(WORKSHOP_DAY_KEY) === 'true';
+        try { wdToggle.checked = localStorage.getItem(WORKSHOP_DAY_KEY) === 'true'; } catch {}
         wdToggle.addEventListener('change', () => {
-          localStorage.setItem(WORKSHOP_DAY_KEY, String(wdToggle.checked));
+          try { localStorage.setItem(WORKSHOP_DAY_KEY, String(wdToggle.checked)); } catch {}
         });
       }
 
@@ -530,12 +545,13 @@
       const qrInlineError = document.getElementById('qrInlineError');
 
       function openQrModal() {
+        if (isKiosk()) return; // locked
         if (selectedBuilding !== null && !isNaN(selectedBuilding)) {
           qrBuildingInp.value = String(selectedBuilding);
         } else {
           qrBuildingInp.value = '';
         }
-        qrWorkshopDay.checked = (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+        try { qrWorkshopDay.checked = (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true'); } catch {}
         if (qrImg) { qrImg.src = ''; qrImg.classList.add('hidden'); }
         qrCanvas.classList.remove('hidden');
         qrResult.classList.add('hidden');
@@ -562,6 +578,7 @@
       }
 
       async function createQr() {
+        if (isKiosk()) return; // locked
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
         if (bVal === '' || isNaN(bNum) || bNum < 0 || bNum > 990) {
@@ -625,6 +642,7 @@
 
       let pbiLoaded = false;
       function openAnalytics() {
+        if (isKiosk()) return; // locked
         const fb = document.getElementById('pbiFallback');
         if (!pbiLoaded && pbiFrame) {
           pbiFrame.addEventListener('load', () => {
@@ -646,11 +664,13 @@
 
     // Building selection helpers
     function selectBuilding(buildingNumber) {
+      if (isKiosk()) return; // locked
       selectedBuilding = buildingNumber;
-      localStorage.setItem('selectedBuilding', buildingNumber);
+      try { localStorage.setItem('selectedBuilding', buildingNumber); } catch {}
       showSurveyForm();
     }
     function selectCustomBuilding() {
+      if (isKiosk()) return; // locked
       const customInput = document.getElementById('customBuilding');
       const buildingNumber = parseInt(customInput.value);
       if (!customInput.value || isNaN(buildingNumber) || buildingNumber <= 100 || buildingNumber >= 500) {
@@ -660,12 +680,17 @@
       selectBuilding(buildingNumber);
     }
     function handleEnterKey(event) { if (event.key === 'Enter') { selectCustomBuilding(); } }
+
     function showBuildingSelection() {
-      localStorage.removeItem('selectedBuilding');
+      if (isKiosk()) return; // locked
+      // keep previous selection; just allow changing it
       buildingSelectionPage.classList.remove('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.add('hidden');
+      updateKioskEntryVisibility();
+      updateBackButtonVisibility();
     }
+
     function showSurveyForm() {
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.remove('hidden');
@@ -678,6 +703,8 @@
         workshopNo.checked  = !preferWD; // default to No unless Workshop preselected
       }
       if (linkToken) { verifyOneTimeToken(); }
+      updateKioskEntryVisibility();
+      updateBackButtonVisibility();
     }
     window.selectBuilding = selectBuilding;
     window.selectCustomBuilding = selectCustomBuilding;
@@ -693,6 +720,7 @@
     const analyticsTab = document.getElementById('analyticsTab');
 
     function openSidebar() {
+      if (isKiosk()) return; // locked
       sidebar.classList.remove('-translate-x-full');
       sidebarOverlay.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
@@ -708,6 +736,7 @@
 
     function switchToSurvey(e) {
       if (e) e.preventDefault();
+      if (isKiosk()) { showSurveyForm(); return; } // locked to survey
       if (selectedBuilding === null) showBuildingSelection(); else showSurveyForm();
       surveyTab.classList.add('border-r-4','border-red-500','bg-gray-50');
       analyticsTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
@@ -715,12 +744,15 @@
     }
     function switchToAnalytics(e) {
       if (e) e.preventDefault();
+      if (isKiosk()) return; // locked
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.remove('hidden');
       analyticsTab.classList.add('border-r-4','border-red-500','bg-gray-50');
       surveyTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
       closeSidebar();
+      updateKioskEntryVisibility();
+      updateBackButtonVisibility();
     }
     if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
     if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
@@ -769,7 +801,6 @@
       if (titleEl) titleEl.textContent = title;
       document.querySelector('.error-message').textContent = message;
 
-      // If token expired, let user go to Python Support
       let redirectOnErrorClose = false;
       const combo = (title + ' ' + message).toLowerCase();
       const isExpiredTokenError = usingToken && (
@@ -926,80 +957,97 @@
       }
     });
 
+    // ===== Tablet (kiosk) entry/exit controls logic =====
+    const kioskEnterBtn = document.getElementById('kioskEnter');
+    const kioskExitBtn  = document.getElementById('kioskExit');
+    const KIOSK_KEY = 'kioskMode';
+
+    function isKiosk(){
+      try { return localStorage.getItem(KIOSK_KEY) === '1'; } catch { return false; }
+    }
+    function setKiosk(v){
+      try {
+        if (v) localStorage.setItem(KIOSK_KEY,'1'); else localStorage.removeItem(KIOSK_KEY);
+      } catch {}
+      applyKiosk(v);
+    }
+    function applyKiosk(state){
+      if(state){ document.body.classList.add('kiosk-mode'); }
+      else { document.body.classList.remove('kiosk-mode'); }
+      // When entering kiosk, force Survey page and block other pages
+      if (state) {
+        showSurveyForm();
+      }
+      updateKioskEntryVisibility();
+      updateBackButtonVisibility();
+    }
+
+    function updateKioskEntryVisibility(){
+      if (!kioskEnterBtn) return;
+      const onSurvey = !surveyPage.classList.contains('hidden');
+      const tokenMode = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
+      const kioskActive = isKiosk();
+      // Show ONLY on survey page, not token, not already in kiosk
+      kioskEnterBtn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
+    }
+    function updateBackButtonVisibility(){
+      if (!backBtn) return;
+      const tokenMode = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
+      backBtn.style.display = (!tokenMode && !isKiosk()) ? '' : 'none';
+    }
+
+    // Persisted kiosk state
+    applyKiosk(isKiosk());
+
+    // Enter kiosk
+    kioskEnterBtn.addEventListener('click', ()=> setKiosk(true));
+
+    // Exit kiosk: five taps in top-right
+    let taps = 0, timer = null;
+    function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
+    function handleExitTap(){
+      taps += 1;
+      if (!timer) { timer = setTimeout(resetTapCounter, 1500); }
+      if (taps >= 5) {
+        resetTapCounter();
+        setKiosk(false);
+      }
+    }
+    kioskExitBtn.addEventListener('click', handleExitTap, {passive:true});
+    kioskExitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
+
+    // Lock behaviors in kiosk
+    window.addEventListener('keydown', (e)=>{
+      if (!isKiosk()) return;
+      // Prevent Backspace navigating away when not typing in inputs
+      if (e.key === 'Backspace') {
+        const tag = (e.target && e.target.tagName) || '';
+        const editable = tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable;
+        if (!editable) { e.preventDefault(); }
+      }
+      // Block Esc from closing modals or doing nav
+      if (e.key === 'Escape') e.preventDefault();
+    });
+    window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) { e.preventDefault(); } });
+
+    // Back to selector (hidden in kiosk or token mode)
+    backBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      showBuildingSelection();
+    });
+
     // Init page
     if (hasOneTimeToken) { showSurveyForm(); }
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
 
-    // Sidebar hamburger (optional; add the button in header if you want)
-    // <button id="openSidebar">...</button> can be added to your header if needed.
+    // Final UI sync
+    updateKioskEntryVisibility();
+    updateBackButtonVisibility();
   </script>
 
   <!-- Tablet (kiosk) entry/exit controls -->
   <button id="kioskEnter" class="kiosk-entry" aria-label="Enter tablet mode" title="Enter tablet mode">Enter Tablet mode</button>
   <button id="kioskExit" class="kiosk-exit" aria-label="Exit tablet mode (tap 5 times)"></button>
-
-  <script>
-    (function(){
-      const KEY = 'kioskMode';
-      const body = document.body;
-      const enterBtn = document.getElementById('kioskEnter');
-      const exitBtn  = document.getElementById('kioskExit');
-
-      // Consider it a Discord/QR session if 't' or 'token' is present.
-      const params = new URLSearchParams(location.search);
-      const hasToken = !!(params.get('t') || params.get('token'));
-
-      function safeSet(k,v){ try{ localStorage.setItem(k,v);}catch{} }
-      function safeGet(k){ try{ return localStorage.getItem(k);}catch{ return null; } }
-      function safeRemove(k){ try{ localStorage.removeItem(k);}catch{} }
-
-      function apply(state){
-        if(state){ body.classList.add('kiosk-mode'); }
-        else { body.classList.remove('kiosk-mode'); }
-      }
-
-      // Allow kiosk entry iff NOT a token link (i.e., building selector / tablet station)
-      const allowEntry = !hasToken;
-
-      // If token link is opened and kiosk persisted, disable it
-      if (!allowEntry && safeGet(KEY) === '1') {
-        safeRemove(KEY);
-        apply(false);
-      }
-
-      // Persisted state across reloads (only if allowed)
-      if (allowEntry && safeGet(KEY) === '1') {
-        apply(true);
-      }
-
-      // Show/hide the entry button depending on allowance
-      if (enterBtn) {
-        enterBtn.style.display = allowEntry ? '' : 'none';
-        enterBtn.addEventListener('click', () => {
-          safeSet(KEY, '1');
-          apply(true);
-        });
-      }
-
-      // Five taps in top-left to exit tablet mode
-      let taps = 0, timer = null;
-      function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
-      function handleExitTap(){
-        taps += 1;
-        if (!timer) { timer = setTimeout(resetTapCounter, 1500); }
-        if (taps >= 5) {
-          resetTapCounter();
-          safeRemove(KEY);
-          apply(false);
-        }
-      }
-      if (exitBtn) {
-        exitBtn.addEventListener('click', handleExitTap);
-        // Also support touch
-        exitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
-      }
-    })();
-  </script>
 </body>
 </html>
