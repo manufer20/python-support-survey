@@ -9,6 +9,31 @@
   <!-- Loosen CSP for Power BI iframe (safe to include) -->
   <meta http-equiv="Content-Security-Policy"
         content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
+
+  <!-- Kiosk UI (enter bottom-right, exit by 5 taps top-left) -->
+  <style>
+    /* --- Kiosk mode toggles --- */
+    .kiosk-entry{
+      position:fixed; right:12px; bottom:12px;
+      width:44px; height:44px; border-radius:9999px;
+      background:rgba(0,0,0,.06); color:#111827;
+      font-weight:600; font-size:12px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+      z-index:60; cursor:pointer; user-select:none;
+    }
+    .kiosk-entry:hover{ background:rgba(0,0,0,.10); }
+    .kiosk-mode .kiosk-entry{ display:none; }
+
+    /* Invisible exit hot-corner (only in kiosk mode) */
+    .kiosk-exit{ display:none; position:fixed; left:0; top:0; width:48px; height:48px; z-index:70; background:transparent; cursor:pointer; }
+    .kiosk-exit:focus{ outline:2px solid rgba(185,28,28,.6); outline-offset:2px; }
+    .kiosk-mode .kiosk-exit{ display:block; }
+
+    /* Hide admin/side UI in kiosk */
+    .kiosk-mode #adminControls{ display:none !important; }
+    .kiosk-mode #sidebar, .kiosk-mode #sidebarOverlay{ display:none !important; }
+  </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
 
@@ -55,7 +80,7 @@
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 transform md:scale-110 origin-center">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Select Your Building</h2>
-          <div class="flex items-center gap-3 sm:gap-4">
+          <div id="adminControls" class="flex items-center gap-3 sm:gap-4">
             <label class="inline-flex items-center text-gray-700">
               <input id="workshopDayToggle" type="checkbox" class="h-5 w-5 text-red-500 border-gray-300 rounded">
               <span class="ml-2 whitespace-nowrap">Workshop</span>
@@ -907,6 +932,52 @@
 
     // Sidebar hamburger (optional; add the button in header if you want)
     // <button id="openSidebar">...</button> can be added to your header if needed.
+  </script>
+
+  <!-- Kiosk entry/exit controls -->
+  <button id="kioskEnter" class="kiosk-entry" aria-label="Enter kiosk mode" title="Enter kiosk mode">K</button>
+  <button id="kioskExit" class="kiosk-exit" aria-label="Exit kiosk mode (tap 5 times)"></button>
+
+  <script>
+    (function(){
+      const KEY = 'kioskMode';
+      const body = document.body;
+      const enterBtn = document.getElementById('kioskEnter');
+      const exitBtn  = document.getElementById('kioskExit');
+
+      function apply(state){
+        if(state){ body.classList.add('kiosk-mode'); }
+        else { body.classList.remove('kiosk-mode'); }
+      }
+
+      // Persisted state across reloads
+      apply(localStorage.getItem(KEY) === '1');
+
+      if (enterBtn) {
+        enterBtn.addEventListener('click', () => {
+          localStorage.setItem(KEY, '1');
+          apply(true);
+        });
+      }
+
+      // Five taps in top-left to exit kiosk
+      let taps = 0, timer = null;
+      function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
+      function handleExitTap(){
+        taps += 1;
+        if (!timer) { timer = setTimeout(resetTapCounter, 1500); }
+        if (taps >= 5) {
+          resetTapCounter();
+          localStorage.removeItem(KEY);
+          apply(false);
+        }
+      }
+      if (exitBtn) {
+        exitBtn.addEventListener('click', handleExitTap);
+        // Also support touch
+        exitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
+      }
+    })();
   </script>
 </body>
 </html>
