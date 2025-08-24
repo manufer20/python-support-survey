@@ -69,6 +69,12 @@
         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2z"></path>
         </svg>
+      <a href="#" id="backSelectorTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to selector
+      </a>  
         Analytics
       </a>
       <a href="#" id="resetTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
@@ -628,6 +634,7 @@
     const closeSidebarBtn = document.getElementById('closeSidebar');
     const surveyTab = document.getElementById('surveyTab');
     const analyticsTab = document.getElementById('analyticsTab');
+    const backSelectorTab = document.getElementById('backSelectorTab');
 
     function openSidebar() { if (isKiosk()) return; sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
     function closeSidebar() { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
@@ -656,6 +663,11 @@
     }
     if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
     if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
+    if (backSelectorTab) backSelectorTab.addEventListener('click', e => {
+      e.preventDefault();
+      showBuildingSelection();
+      closeSidebar();
+    });
 
     // Friendly error builder + showError (unchanged)
     function friendlyError(raw, status = 0, usingToken = false) {
@@ -917,7 +929,6 @@
 
   <!-- Floating FABs -->
   <button id="kioskEnter" class="fab" aria-label="Enter tablet mode" title="Enter tablet mode">Enter Tablet mode</button>
-  <button id="backFab" class="fab" aria-label="Back to selector" title="Back to selector">Back to selector</button>
   <button id="kioskExit" aria-label="Exit tablet mode (tap 5 times)"></button>
 </body>
 </html>
