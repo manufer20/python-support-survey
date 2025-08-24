@@ -46,11 +46,13 @@
     }
 
     /* ==== Student-flow layout (token/QR/kiosk) ==== */
-    /* Hide top bar and use a tall, centered survey card so students see only the form */
+    /* Hide top bar and use a tall, centered survey area for students */
     body.student-flow header { display: none !important; }
     body.student-flow #surveyPage { padding: 0 !important; }
     body.student-flow #buildingSelectionPage,
-    body.student-flow #analyticsPage { display: none !important; } /* just in case */
+    body.student-flow #analyticsPage { display: none !important; }
+
+    /* Default student-flow: flat (no card) for token/QR */
     body.student-flow #surveyCard{
       margin: 0;
       border-radius: 0;
@@ -59,12 +61,21 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      max-width: 44rem; /* keep reasonable width */
     }
     @supports (min-height: 100svh) {
       body.student-flow #surveyCard { min-height: 100svh; }
     }
-    /* Keep reasonable width so nothing overflows */
-    body.student-flow #surveyCard { max-width: 44rem; } /* ~704px */
+
+    /* === Kiosk only: bring the card back === */
+    body.kiosk-mode.student-flow #surveyPage { padding: 1rem !important; }
+    body.kiosk-mode.student-flow #surveyCard{
+      margin: 1rem auto;
+      border-radius: 0.75rem; /* rounded card */
+      box-shadow: 0 10px 25px rgba(17,24,39,.12);
+      max-width: 44rem;
+      min-height: auto; /* don’t stretch full height when card is back */
+    }
   </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
@@ -90,7 +101,7 @@
 
       <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
         </svg>
         Analytics
       </a>
@@ -423,7 +434,6 @@
     document.getElementById("accessCodeInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); document.getElementById("codeSubmit").click(); }
     });
-    // Fallback: when modal is shown, Enter anywhere submits
     document.addEventListener('keydown', (e) => {
       const modal = document.getElementById('loginModal');
       if (modal && !modal.classList.contains('hidden') && e.key === 'Enter') {
@@ -449,7 +459,7 @@
     }
     if (linkToken) { selectedBuilding = null; } // one-time link = Online
 
-    // ===== Utilities to toggle student-flow layout =====
+    /* Student-flow toggles (token/QR/kiosk) */
     function isKiosk(){ try { return localStorage.getItem('kioskMode') === '1'; } catch { return false; } }
     function applyStudentFlowLayout() {
       const tokenOrQr = !!(linkToken || qpBuilding);
@@ -487,7 +497,7 @@
           switchToSurvey();
         }
       }
-      applyStudentFlowLayout();  // ensure top bar hides/shows together
+      applyStudentFlowLayout();
     }
 
     // Token verify (non-blocking)
@@ -653,7 +663,7 @@
       });
 
       applySidebarVisibility();
-      applyStudentFlowLayout(); // also run here
+      applyStudentFlowLayout();
     });
 
     // Building selection helpers
@@ -933,24 +943,26 @@
       }
     });
 
-    // ===== Kiosk helpers (Esc unfreeze fix retained) =====
+    /* ===== Kiosk helpers (now 30% zoom) ===== */
     const kioskEnterBtn = document.getElementById('kioskEnter');
     const kioskExitBtn  = document.getElementById('kioskExit');
     const KIOSK_KEY = 'kioskMode';
     function setKiosk(v){ try { v ? localStorage.setItem(KIOSK_KEY,'1') : localStorage.removeItem(KIOSK_KEY); } catch {} applyKiosk(v); }
     let kioskHistoryTrap = false;
     function onPop(){ if (kioskHistoryTrap) { history.pushState({kiosk:1}, '', location.href); } }
+
+    /* bump to 1.30 for +15% more than before */
     function setViewportLock(lock, scale = 1.0) {
       const vp = document.querySelector('meta[name="viewport"]');
       if (!vp) return;
       vp.setAttribute('content', lock
-      ? `width=device-width, initial-scale=${scale}, maximum-scale=${scale}, user-scalable=no`
-      : 'width=device-width, initial-scale=1.0');
+        ? `width=device-width, initial-scale=${scale}, maximum-scale=${scale}, user-scalable=no`
+        : 'width=device-width, initial-scale=1.0');
     }
     function applyKiosk(state){
       if(state){
         document.body.classList.add('kiosk-mode');
-        setViewportLock(true, 1.15);
+        setViewportLock(true, 1.30);           // ← was 1.15, now +15% more
         try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); } catch {}
         try { const el=document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{}); } catch {}
         kioskHistoryTrap = true;
@@ -966,7 +978,7 @@
       }
       syncFabVisibility();
       applySidebarVisibility();
-      applyStudentFlowLayout(); // make sure header hides/shows
+      applyStudentFlowLayout();
     }
     function syncFabVisibility(){
       const onSurvey = !document.getElementById('surveyPage').classList.contains('hidden');
@@ -1015,7 +1027,7 @@
     syncFabVisibility();
     syncBackSelectorVisibility();
     applySidebarVisibility();
-    applyStudentFlowLayout();  // run once on boot
+    applyStudentFlowLayout();
   </script>
 
   <!-- Floating FABs -->
