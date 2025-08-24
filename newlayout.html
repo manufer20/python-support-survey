@@ -57,7 +57,7 @@
       </a>
       <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2z"></path>
         </svg>
         Analytics
       </a>
@@ -946,36 +946,30 @@
       const enterBtn = document.getElementById('kioskEnter');
       const exitBtn  = document.getElementById('kioskExit');
 
-      // Detect if the current device is a tablet
-      function isTablet() {
-        const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
-        const isIpad = /\bipad\b/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        const isAndroidTablet = /android/.test(ua) && !/mobile/.test(ua);
-        const hasTabletKeyword = /tablet/.test(ua);
-        const largeTouch = ('ontouchstart' in window) && Math.min(screen.width, screen.height) >= 768;
-        return isIpad || isAndroidTablet || hasTabletKeyword || largeTouch;
-      }
-
-      // Check if this is a one-time token session (Discord link or QR)
+      // Consider it a Discord/QR session if 't' or 'token' is present.
       const params = new URLSearchParams(location.search);
       const hasToken = !!(params.get('t') || params.get('token'));
+
+      function safeSet(k,v){ try{ localStorage.setItem(k,v);}catch{} }
+      function safeGet(k){ try{ return localStorage.getItem(k);}catch{ return null; } }
+      function safeRemove(k){ try{ localStorage.removeItem(k);}catch{} }
 
       function apply(state){
         if(state){ body.classList.add('kiosk-mode'); }
         else { body.classList.remove('kiosk-mode'); }
       }
 
-      // Only allow the entry button on TABLETS and when NOT a token link.
-      const allowEntry = isTablet() && !hasToken;
+      // Allow kiosk entry iff NOT a token link (i.e., building selector / tablet station)
+      const allowEntry = !hasToken;
 
-      // If a token link is opened and kiosk persisted, disable it
-      if (!allowEntry && localStorage.getItem(KEY) === '1') {
-        localStorage.removeItem(KEY);
+      // If token link is opened and kiosk persisted, disable it
+      if (!allowEntry && safeGet(KEY) === '1') {
+        safeRemove(KEY);
         apply(false);
       }
 
       // Persisted state across reloads (only if allowed)
-      if (allowEntry && localStorage.getItem(KEY) === '1') {
+      if (allowEntry && safeGet(KEY) === '1') {
         apply(true);
       }
 
@@ -983,7 +977,7 @@
       if (enterBtn) {
         enterBtn.style.display = allowEntry ? '' : 'none';
         enterBtn.addEventListener('click', () => {
-          localStorage.setItem(KEY, '1');
+          safeSet(KEY, '1');
           apply(true);
         });
       }
@@ -996,7 +990,7 @@
         if (!timer) { timer = setTimeout(resetTapCounter, 1500); }
         if (taps >= 5) {
           resetTapCounter();
-          localStorage.removeItem(KEY);
+          safeRemove(KEY);
           apply(false);
         }
       }
