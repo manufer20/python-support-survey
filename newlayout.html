@@ -38,14 +38,15 @@
     .kiosk-mode #buildingSelectionPage,
     .kiosk-mode #analyticsPage { display:none !important; }
 
-    /* Keep scrolling stable in kiosk */
-    .kiosk-mode html, .kiosk-mode body { overflow:hidden; }
-
-    /* Reduce accidental long-press menus while keeping text input usable */
+    /* Fixed, non-scrollable viewport in kiosk */
+    .kiosk-mode html, .kiosk-mode body { height:100%; overflow:hidden; }
+    .kiosk-mode body{ position:fixed; inset:0; height:100vh; width:100vw; overscroll-behavior:none; }
+    .kiosk-mode #mainWrapper{ height:100vh; overflow:hidden; }
+    /* Keep interactions but avoid accidental gestures */
     .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
     .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
 
-    /* The survey card we scale in kiosk to “zoom in” */
+    /* Survey card (no zooming—natural size) */
     #surveyCard { transform-origin: top center; }
   </style>
 </head>
@@ -676,7 +677,6 @@
       }
       if (linkToken) { verifyOneTimeToken(); }
       syncFabVisibility();
-      if (isKiosk()) updateKioskScaleSoon();
     }
     window.selectBuilding = selectBuilding;
     window.selectCustomBuilding = selectCustomBuilding;
@@ -772,26 +772,47 @@
       document.getElementById('errorModal').classList.remove('hidden');
     }
 
-    // Form handling
+    // ===== Role toggle: clear & disable inactive input (bugfix) =====
     const form = document.getElementById("surveyForm");
     const roleInputs      = form.querySelectorAll('input[name="role"]');
     const studentWrapper  = document.getElementById('studentWrapper');
     const usernameWrapper = document.getElementById('usernameWrapper');
+    const studentNumInput = document.getElementById('student_number');
+    const usernameInput   = document.getElementById('dtu_username');
 
     roleInputs.forEach(radio => radio.addEventListener('change', toggleRole));
+
     function toggleRole() {
       const isStudent = form.role.value === 'student';
+
+      // Show/Hide groups
       studentWrapper.classList.toggle('hidden', !isStudent);
       usernameWrapper.classList.toggle('hidden',  isStudent);
-      form.student_number.required = isStudent;
-      form.dtu_username.required   = !isStudent;
-    }
-    toggleRole();
 
-    const studentNumInput = document.getElementById('student_number');
+      // Required flags
+      studentNumInput.required = isStudent;
+      usernameInput.required   = !isStudent;
+
+      // Disable + clear inactive control so it CANNOT block submission
+      if (isStudent) {
+        // activate student number
+        studentNumInput.disabled = false;
+        usernameInput.disabled = true;
+        usernameInput.value = '';
+        usernameInput.setCustomValidity('');
+      } else {
+        // activate username
+        usernameInput.disabled = false;
+        studentNumInput.disabled = true;
+        studentNumInput.value = '';
+        studentNumInput.setCustomValidity('');
+      }
+    }
+
+    // Student number validation hints
     function setStudentCustomValidation() {
       const isStudent = (form.role.value === 'student');
-      if (!isStudent) { studentNumInput.setCustomValidity(''); return; }
+      if (!isStudent || studentNumInput.disabled) { studentNumInput.setCustomValidity(''); return; }
       const v = (studentNumInput.value || '').trim();
       if (!v)      studentNumInput.setCustomValidity("Please enter your student number: type the 6 digits after 's' (e.g. s123456).");
       else if (!/^\d{6}$/.test(v)) studentNumInput.setCustomValidity("Format: exactly 6 digits. Example: s123456. Don’t type the 's'—it's already filled in.");
@@ -802,9 +823,7 @@
       studentNumInput.addEventListener('blur', setStudentCustomValidation);
       studentNumInput.addEventListener('invalid', setStudentCustomValidation);
     }
-    const _oldToggleRole = toggleRole;
-    toggleRole = function() { _oldToggleRole(); setStudentCustomValidation(); };
-    setStudentCustomValidation();
+    toggleRole(); // initialize
 
     const thankYouModal = document.getElementById("thankYouModal");
     const closeBtn = document.getElementById("closeModal");
@@ -823,10 +842,10 @@
 
       const payload = {
         role: form.role.value,
-        student_number: isStudent ? 's' + form.student_number.value.trim() : null,
-        username:        !isStudent ? form.dtu_username.value.trim() : null,
+        student_number: isStudent ? 's' + studentNumInput.value.trim() : null,
+        username:        !isStudent ? usernameInput.value.trim() : null,
         satisfaction: Number(form.querySelector('input[name="satisfaction"]:checked').value),
-        course_number: form.course_number.value.trim() || null,
+        course_number: (document.getElementById('course_number').value || '').trim() || null,
         building_Number: linkToken ? null : selectedBuilding,
         workshop: (form.elements['workshop'] && form.elements['workshop'].value === 'yes'),
         token: linkToken || null,
@@ -857,8 +876,8 @@
               workshopNo.checked  = !preferWD;
             }
           }
-          document.getElementById('student_number').value = '';
-          document.getElementById('student_number').focus();
+          studentNumInput.value = '';
+          studentNumInput.focus();
           document.activeElement?.blur();
           setTimeout(() => { thankYouModal.classList.add('hidden'); }, 3000);
         } else {
@@ -874,7 +893,7 @@
             }
           } catch {}
           showError(friendlyError(raw, response.status, !!linkToken), response.status);
-          if (form.role.value === 'student') { form.student_number.focus(); } else { form.dtu_username?.focus(); }
+          if (form.role.value === 'student') { studentNumInput.focus(); } else { usernameInput?.focus(); }
         }
       } catch (err) {
         console.error("Background submit failed:", err);
@@ -896,7 +915,7 @@
       }
     });
 
-    // ===== Tablet (kiosk) entry/exit controls =====
+    // ===== Tablet (kiosk) entry/exit controls (no zoom, no scroll) =====
     const kioskEnterBtn = document.getElementById('kioskEnter');
     const kioskExitBtn  = document.getElementById('kioskExit');
     const backFab       = document.getElementById('backFab');
@@ -909,28 +928,38 @@
     }
 
     let kioskHistoryTrap = false;
-    function onPop(e){ if (kioskHistoryTrap) { history.pushState({kiosk:1}, '', location.href); } }
+    function onPop(){ if (kioskHistoryTrap) { history.pushState({kiosk:1}, '', location.href); } }
+
+    function setViewportLock(lock) {
+      const vp = document.querySelector('meta[name="viewport"]');
+      if (!vp) return;
+      if (lock) {
+        vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      } else {
+        vp.setAttribute('content','width=device-width, initial-scale=1.0');
+      }
+    }
 
     function applyKiosk(state){
       if(state){
         document.body.classList.add('kiosk-mode');
-        // Lock orientation (best effort) + fullscreen
+        setViewportLock(true);
+        // Best-effort orientation + fullscreen
         try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); } catch {}
-        try {
-          const el = document.documentElement;
-          if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-        } catch {}
+        try { const el=document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{}); } catch {}
         // Trap back navigation
         kioskHistoryTrap = true;
         try { history.pushState({kiosk:1}, '', location.href); } catch {}
         window.addEventListener('popstate', onPop);
-        updateKioskScaleSoon();
+        // Keep top
+        window.scrollTo(0,0);
       } else {
         document.body.classList.remove('kiosk-mode');
+        setViewportLock(false);
         kioskHistoryTrap = false;
         window.removeEventListener('popstate', onPop);
         try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch {}
-        // Reset transform
+        // Clear any transforms
         const card = document.getElementById('surveyCard');
         if (card) card.style.transform = '';
       }
@@ -941,34 +970,20 @@
       const onSurvey = !surveyPage.classList.contains('hidden');
       const tokenMode = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
       const kioskActive = isKiosk();
-      // Show Enter Tablet mode only on survey, not token, not kiosk
       if (kioskEnterBtn) kioskEnterBtn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
-      // Back to selector (top-left) only on survey, not token, not kiosk
-      if (backFab) backFab.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
+      if (backFab) backFab.style.display           = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
     }
 
-    // Zoom/scale to fit in kiosk
-    function updateKioskScale(){
+    // Prevent scroll gestures in kiosk
+    function blockScroll(e){ if (isKiosk()) { e.preventDefault(); } }
+    window.addEventListener('touchmove', blockScroll, {passive:false});
+    window.addEventListener('wheel', blockScroll, {passive:false});
+
+    // After leaving an input, snap back to top & re-lock
+    document.addEventListener('focusout', () => {
       if (!isKiosk()) return;
-      const card = document.getElementById('surveyCard');
-      if (!card) return;
-      // Temporarily clear transform to measure natural size
-      const prev = card.style.transform;
-      card.style.transform = 'none';
-      const vw = window.innerWidth, vh = window.innerHeight;
-      const cw = card.offsetWidth, ch = card.offsetHeight;
-      // Leave small margins; cap scale to avoid blurry UI
-      const scale = Math.min(vw / (cw + 24), vh / (ch + 24), 1.35);
-      const finalScale = Math.max(1.08, scale); // ensure a visible zoom
-      card.style.transformOrigin = 'top center';
-      card.style.transform = `scale(${finalScale})`;
-      // restore (we already set new transform)
-      void(prev);
-    }
-    let scaleTimer=null;
-    function updateKioskScaleSoon(){ if (scaleTimer) cancelAnimationFrame(scaleTimer); scaleTimer = requestAnimationFrame(updateKioskScale); }
-    window.addEventListener('resize', updateKioskScaleSoon);
-    window.addEventListener('orientationchange', ()=>setTimeout(updateKioskScale, 250));
+      setTimeout(() => { window.scrollTo(0,0); }, 50);
+    });
 
     // Enter kiosk
     kioskEnterBtn.addEventListener('click', ()=> setKiosk(true));
@@ -987,19 +1002,15 @@
     kioskExitBtn.addEventListener('click', handleExitTap, {passive:true});
     kioskExitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
 
-    // Lock behaviors in kiosk
+    // Lock behaviors in kiosk (keyboard/nav)
     window.addEventListener('keydown', (e)=>{
       if (!isKiosk()) return;
       const tag = (e.target && e.target.tagName) || '';
       const editable = tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable;
-      // Prevent Backspace navigation
       if (e.key === 'Backspace' && !editable) e.preventDefault();
-      // Prevent refresh combos
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
       if (e.key === 'F5' || (ctrlOrCmd && (e.key.toLowerCase() === 'r' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'n'))) e.preventDefault();
-      // Prevent Alt+Left/Right
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) e.preventDefault();
-      // Prevent Esc (closing modals / leaving FS)
       if (e.key === 'Escape') e.preventDefault();
     });
     window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) { e.preventDefault(); } });
