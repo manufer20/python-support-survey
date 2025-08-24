@@ -570,61 +570,6 @@
       qrCopy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
-      
-      // === NEW: Wire up the supporter login modal ===
-      const codeSubmitBtn = document.getElementById('codeSubmit');
-      const accessCodeInput = document.getElementById('accessCodeInput');
-      const loginError = document.getElementById('loginError');
-
-      async function handleLogin() {
-        const code = accessCodeInput.value.trim();
-        if (!code) return;
-
-        codeSubmitBtn.disabled = true;
-        codeSubmitBtn.textContent = 'Verifying...';
-        loginError.classList.add('hidden');
-
-        try {
-          const response = await fetch(tokenEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accessCode: code })
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const apiKey = data.apiKey || data.key;
-
-            if (apiKey) {
-              const today = new Date().toISOString().slice(0, 10);
-              try {
-                localStorage.setItem(STORAGE_KEY, `${today}|${apiKey}`);
-              } catch {}
-              hideLogin();
-            } else {
-              throw new Error('Invalid response from server.');
-            }
-          } else {
-            loginError.classList.remove('hidden');
-          }
-        } catch (err) {
-          console.error('Login failed:', err);
-          loginError.classList.remove('hidden');
-        } finally {
-          codeSubmitBtn.disabled = false;
-          codeSubmitBtn.textContent = 'Enter';
-        }
-      }
-
-      if (codeSubmitBtn && accessCodeInput) {
-        codeSubmitBtn.addEventListener('click', handleLogin);
-        accessCodeInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            handleLogin();
-          }
-        });
-      }
 
       // Apply initial sidebar visibility now that DOM exists
       applySidebarVisibility();
