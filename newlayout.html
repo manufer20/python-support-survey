@@ -58,33 +58,35 @@
         </svg>
       </button>
     </div>
-    <nav class="mt-8"></nav>
+
+    <!-- FIXED: properly opened/closed <nav> and valid SVGs -->
+    <nav class="mt-8">
       <a href="#" id="surveyTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 border-r-4 border-red-500 bg-gray-50">
-      <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-      </svg>
-      Survey
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        Survey
       </a>
 
       <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
-      <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-      </svg>
-      Analytics
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        Analytics
       </a>
 
       <a href="#" id="backSelectorTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
-      <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-      </svg>
-      Back to selector
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to selector
       </a>
 
       <a href="#" id="resetTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
-      <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-5.292M20 14a8 8 0 01-14 5.292"/>
-      </svg>
-      Reset / Logout
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-5.292M20 14a8 8 0 01-14 5.292"/>
+        </svg>
+        Reset / Logout
       </a>
     </nav>
   </div>
@@ -121,7 +123,6 @@
             <button id="btnGenerateQR" type="button" class="text-sm bg-white border border-red-500 text-red-600 px-3 py-2 rounded hover:bg-red-50">
               QR
             </button>
-            
           </div>
         </div>
 
@@ -161,7 +162,7 @@
 
     <!-- Survey Page -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
-      <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx_auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
+      <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-center mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
         </div>
@@ -613,6 +614,7 @@
       surveyPage.classList.add('hidden');
       analyticsPage.classList.add('hidden');
       syncFabVisibility();
+      syncBackSelectorVisibility();
     }
     function showSurveyForm() {
       buildingSelectionPage.classList.add('hidden');
@@ -624,6 +626,7 @@
       if (workshopYes && workshopNo) { workshopYes.checked = !!preferWD; workshopNo.checked  = !preferWD; }
       if (linkToken) { verifyOneTimeToken(); }
       syncFabVisibility();
+      syncBackSelectorVisibility();
     }
     window.selectBuilding = selectBuilding;
     window.selectCustomBuilding = selectCustomBuilding;
@@ -638,6 +641,7 @@
     const surveyTab = document.getElementById('surveyTab');
     const analyticsTab = document.getElementById('analyticsTab');
     const backSelectorTab = document.getElementById('backSelectorTab');
+    const resetTab = document.getElementById('resetTab');
 
     function openSidebar() { if (isKiosk()) return; sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
     function closeSidebar() { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
@@ -663,14 +667,19 @@
       surveyTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
       closeSidebar();
       syncFabVisibility();
+      syncBackSelectorVisibility();
     }
     if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
     if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
-    if (backSelectorTab) backSelectorTab.addEventListener('click', e => {
-      e.preventDefault();
-      showBuildingSelection();
-      closeSidebar();
-    });
+    if (backSelectorTab) backSelectorTab.addEventListener('click', e => { e.preventDefault(); showBuildingSelection(); closeSidebar(); });
+    if (resetTab) resetTab.addEventListener('click', e => { e.preventDefault(); location.href = location.pathname + '?reset=1'; });
+
+    // Show/hide "Back to selector" only when not on selector page
+    function syncBackSelectorVisibility(){
+      if (!backSelectorTab) return;
+      const onSelectorPage = !buildingSelectionPage.classList.contains('hidden');
+      backSelectorTab.style.display = onSelectorPage ? 'none' : '';
+    }
 
     // Friendly error builder + showError (unchanged)
     function friendlyError(raw, status = 0, usingToken = false) {
@@ -919,7 +928,7 @@
     });
     window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) { e.preventDefault(); } });
 
-    // Back to selector
+    // Back to selector floating FAB (if present)
     const backFabBtn = document.getElementById('backFab');
     if (backFabBtn) backFabBtn.addEventListener('click', (e)=>{ e.preventDefault(); showBuildingSelection(); });
 
@@ -928,6 +937,7 @@
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
     syncFabVisibility();
+    syncBackSelectorVisibility();
   </script>
 
   <!-- Floating FABs -->
