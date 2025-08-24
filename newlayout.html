@@ -6,7 +6,6 @@
   <meta name="color-scheme" content="light">
   <title>Student Satisfaction Survey</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-  <!-- Loosen CSP for Power BI iframe -->
   <meta http-equiv="Content-Security-Policy"
         content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 
@@ -48,7 +47,6 @@
 </head>
 <body class="bg-gray-50 flex min-h-screen">
 
-  <!-- Sidebar (hidden until hamburger pressed) -->
   <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out">
     <div class="flex items-center justify-between h-16 px-4 border-b">
       <h2 class="text-lg font-semibold text-gray-800">Menu</h2>
@@ -90,13 +88,10 @@
     </nav>
   </div>
 
-  <!-- Sidebar overlay -->
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-  <!-- Main content -->
   <div class="flex-1 flex flex-col" id="mainWrapper">
 
-    <!-- Top header with hamburger -->
     <header class="h-16 flex items-center px-4 border-b bg-white">
       <button id="openSidebar" class="text-gray-600 hover:text-gray-800 mr-3" aria-label="Open menu">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +101,6 @@
       <h1 class="text-lg font-semibold text-gray-800">DTU Python Support Survey</h1>
     </header>
 
-    <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-between mb-6">
@@ -136,7 +130,6 @@
             <div class="text-sm text-gray-500">Secondary Python Support Office</div>
           </button>
 
-          <!-- Custom Building Section -->
           <div class="border-2 border-gray-200 rounded-lg p-4">
             <div class="font-semibold text-gray-700 mb-2">Other Building</div>
             <div class="text-sm text-gray-500 mb-3">Enter building number</div>
@@ -159,7 +152,6 @@
       </div>
     </div>
 
-    <!-- Survey Page -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
       <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-center mb-6">
@@ -167,9 +159,7 @@
         </div>
 
         <form id="surveyForm" class="space-y-6">
-          <!-- Role + Workshop -->
           <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
-            <!-- Roles -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
               <label class="inline-flex items-center text-gray-700">
                 <input type="radio" name="role" value="student" class="form-radio" checked />
@@ -181,7 +171,6 @@
               </label>
             </div>
 
-            <!-- Workshop Yes/No -->
             <div class="order-3 sm:order-2">
               <fieldset>
                 <legend class="block text-gray-700 mb-2 font-medium">Attended workshop?</legend>
@@ -198,7 +187,6 @@
               </fieldset>
             </div>
 
-            <!-- Student number -->
             <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
               <div class="flex">
@@ -207,7 +195,6 @@
               </div>
             </div>
 
-            <!-- Username (employee) -->
             <div id="usernameWrapper" class="hidden order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
               <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
@@ -253,7 +240,6 @@
       </div>
     </div>
 
-    <!-- Analytics Page (opened from sidebar) -->
     <div id="analyticsPage" class="flex-1 p-0 hidden">
       <div class="h-full w-full bg-white">
         <div class="h-full w-full">
@@ -263,7 +249,6 @@
     </div>
   </div>
 
-  <!-- Supporter Login Modal -->
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
@@ -273,7 +258,6 @@
     </div>
   </div>
 
-  <!-- Modals -->
   <div id="thankYouModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <h2 class="text-xl font-semibold mb-2">We value your time</h2>
@@ -293,7 +277,6 @@
     </div>
   </div>
 
-  <!-- QR Modal -->
   <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
       <h3 class="text-lg font-semibold text-gray-800 mb-4">Generate QR for Building</h3>
@@ -335,7 +318,6 @@
     </div>
   </div>
 
-  <!-- QR code library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <script type="module">
@@ -398,17 +380,27 @@
     }
     if (linkToken) { selectedBuilding = null; } // one-time link = Online
 
-    // === NEW: decide when sidebar must be hidden (Discord link, QR, or Tablet mode)
+    // === FIXED: Decide when sidebar must be hidden (Discord link, QR, or Tablet mode)
     const tokenOrQr = !!linkToken || !!qpBuilding;
     function applySidebarVisibility() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');
       const openBtn = document.getElementById('openSidebar');
 
-      const hide = tokenOrQr || isKiosk();
-      if (sidebar) sidebar.style.display = hide ? 'none' : '';
-      if (overlay) overlay.style.display = 'none';
-      if (openBtn) openBtn.style.display = hide ? 'none' : '';
+      const hideSidebarSystem = tokenOrQr || isKiosk();
+
+      if (sidebar) {
+        sidebar.style.display = hideSidebarSystem ? 'none' : '';
+      }
+      if (openBtn) {
+        openBtn.style.display = hideSidebarSystem ? 'none' : '';
+      }
+      if (overlay) {
+        // In restricted modes, hide the overlay completely by applying an inline style.
+        // In normal (supporter) mode, remove any inline style so its visibility
+        // can be controlled by adding/removing the 'hidden' class via open/close functions.
+        overlay.style.display = hideSidebarSystem ? 'none' : '';
+      }
     }
 
     // Validate token (non-blocking)
@@ -948,7 +940,6 @@
     applySidebarVisibility(); // <-- final pass
   </script>
 
-  <!-- Floating FABs -->
   <button id="kioskEnter" class="fab" aria-label="Enter tablet mode" title="Enter tablet mode">Enter Tablet mode</button>
   <button id="kioskExit" aria-label="Exit tablet mode (tap 5 times)"></button>
 </body>
