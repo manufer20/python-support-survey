@@ -940,17 +940,17 @@
     function setKiosk(v){ try { v ? localStorage.setItem(KIOSK_KEY,'1') : localStorage.removeItem(KIOSK_KEY); } catch {} applyKiosk(v); }
     let kioskHistoryTrap = false;
     function onPop(){ if (kioskHistoryTrap) { history.pushState({kiosk:1}, '', location.href); } }
-    function setViewportLock(lock) {
+    function setViewportLock(lock, scale = 1.0) {
       const vp = document.querySelector('meta[name="viewport"]');
       if (!vp) return;
       vp.setAttribute('content', lock
-        ? 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
-        : 'width=device-width, initial-scale=1.0');
+      ? `width=device-width, initial-scale=${scale}, maximum-scale=${scale}, user-scalable=no`
+      : 'width=device-width, initial-scale=1.0');
     }
     function applyKiosk(state){
       if(state){
         document.body.classList.add('kiosk-mode');
-        setViewportLock(true);
+        setViewportLock(true, 1.15);
         try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); } catch {}
         try { const el=document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{}); } catch {}
         kioskHistoryTrap = true;
