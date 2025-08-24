@@ -6,11 +6,12 @@
   <meta name="color-scheme" content="light">
   <title>Student Satisfaction Survey</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <!-- Loosen CSP for Power BI iframe -->
   <meta http-equiv="Content-Security-Policy"
         content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 
   <style>
-    /* Floating buttons (kept as before) */
+    /* Floating buttons */
     .fab{
       position:fixed; min-width:44px; height:44px; border-radius:9999px;
       padding:0 14px; font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;
@@ -18,19 +19,16 @@
     }
     #kioskEnter{ right:12px; bottom:12px; background:#000; color:#fff; }
     #kioskEnter:hover{ background:#111; }
-    #backFab{ left:12px; top:12px; background:#6b7280; color:#fff; }
-    #backFab:hover{ background:#4b5563; }
 
     /* Hide FABs when in kiosk */
     .kiosk-mode #kioskEnter{ display:none !important; }
-    .kiosk-mode #backFab{ display:none !important; }
 
     /* Invisible exit hot-corner (TOP RIGHT) only in kiosk mode */
     #kioskExit{ display:none; position:fixed; right:0; top:0; width:56px; height:56px; z-index:70; background:transparent; cursor:pointer; }
     #kioskExit:focus{ outline:2px solid rgba(185,28,28,.6); outline-offset:2px; }
     .kiosk-mode #kioskExit{ display:block; }
 
-    /* Lock down chrome in kiosk (no custom scaling added) */
+    /* Lock down chrome in kiosk */
     .kiosk-mode #adminControls,
     .kiosk-mode #sidebar,
     .kiosk-mode #sidebarOverlay,
@@ -43,20 +41,11 @@
 
     .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
     .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
-
-    /* === NEW: Widen the survey card for students to use the full space === */
-    .student-view #surveyCard {
-      max-width: 56rem; /* Equivalent to Tailwind's max-w-4xl */
-    }
-    @media (min-width: 1024px) {
-      .student-view #surveyCard {
-        max-width: 64rem; /* Equivalent to Tailwind's max-w-5xl */
-      }
-    }
   </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
 
+  <!-- Sidebar -->
   <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out">
     <div class="flex items-center justify-between h-16 px-4 border-b">
       <h2 class="text-lg font-semibold text-gray-800">Menu</h2>
@@ -98,10 +87,13 @@
     </nav>
   </div>
 
+  <!-- Sidebar overlay -->
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
+  <!-- Main content -->
   <div class="flex-1 flex flex-col" id="mainWrapper">
 
+    <!-- Top header with hamburger -->
     <header class="h-16 flex items-center px-4 border-b bg-white">
       <button id="openSidebar" class="text-gray-600 hover:text-gray-800 mr-3" aria-label="Open menu">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,6 +103,7 @@
       <h1 class="text-lg font-semibold text-gray-800">DTU Python Support Survey</h1>
     </header>
 
+    <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-between mb-6">
@@ -140,6 +133,7 @@
             <div class="text-sm text-gray-500">Secondary Python Support Office</div>
           </button>
 
+          <!-- Custom Building Section -->
           <div class="border-2 border-gray-200 rounded-lg p-4">
             <div class="font-semibold text-gray-700 mb-2">Other Building</div>
             <div class="text-sm text-gray-500 mb-3">Enter building number</div>
@@ -162,6 +156,7 @@
       </div>
     </div>
 
+    <!-- Survey Page -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
       <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-center mb-6">
@@ -169,7 +164,9 @@
         </div>
 
         <form id="surveyForm" class="space-y-6">
+          <!-- Role + Workshop -->
           <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
+            <!-- Roles -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
               <label class="inline-flex items-center text-gray-700">
                 <input type="radio" name="role" value="student" class="form-radio" checked />
@@ -181,6 +178,7 @@
               </label>
             </div>
 
+            <!-- Workshop Yes/No -->
             <div class="order-3 sm:order-2">
               <fieldset>
                 <legend class="block text-gray-700 mb-2 font-medium">Attended workshop?</legend>
@@ -197,6 +195,7 @@
               </fieldset>
             </div>
 
+            <!-- Student number -->
             <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
               <div class="flex">
@@ -205,6 +204,7 @@
               </div>
             </div>
 
+            <!-- Username (employee) -->
             <div id="usernameWrapper" class="hidden order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
               <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
@@ -250,6 +250,7 @@
       </div>
     </div>
 
+    <!-- Analytics Page (opened from sidebar) -->
     <div id="analyticsPage" class="flex-1 p-0 hidden">
       <div class="h-full w-full bg-white">
         <div class="h-full w-full">
@@ -259,6 +260,7 @@
     </div>
   </div>
 
+  <!-- Supporter Login Modal -->
   <div id="loginModal" class="fixed inset-0 bg-white flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
       <h2 class="text-xl font-semibold mb-3 text-gray-700">Supporter Login</h2>
@@ -268,6 +270,7 @@
     </div>
   </div>
 
+  <!-- Modals -->
   <div id="thankYouModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <h2 class="text-xl font-semibold mb-2">We value your time</h2>
@@ -287,6 +290,7 @@
     </div>
   </div>
 
+  <!-- QR Modal -->
   <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
       <h3 class="text-lg font-semibold text-gray-800 mb-4">Generate QR for Building</h3>
@@ -328,6 +332,7 @@
     </div>
   </div>
 
+  <!-- QR code library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <script type="module">
@@ -335,7 +340,6 @@
     const endpoint       = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
     const tokenEndpoint  = "https://python-support-proxy.azurewebsites.net/api/issueToken";
     const qrSignEndpoint = "https://python-support-proxy.azurewebsites.net/api/qrRedirect";
-    const WORKSHOP_DAY_KEY = "workshopDay";
     const STORAGE_KEY = "surveySupportAuth"; // "YYYY-MM-DD|key"
 
     // Optional reset by URL
@@ -373,28 +377,7 @@
     const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || new URLSearchParams(window.location.search).get('token');
     if (hasOneTimeToken) { hideLogin(); } else if (isAuthValid()) { hideLogin(); } else { showLogin(); }
 
-    // Login submit
-    document.getElementById("codeSubmit").addEventListener("click", async () => {
-      const input = document.getElementById("accessCodeInput").value.trim();
-      const ok = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": input },
-        body: JSON.stringify({ ping: true })
-      }).then(r => r.ok).catch(() => false);
-
-      if (ok) {
-        const today = new Date().toISOString().slice(0, 10);
-        try { localStorage.setItem(STORAGE_KEY, `${today}|${input}`); } catch {}
-        hideLogin();
-        document.getElementById("accessCodeInput").value = "";
-      } else {
-        document.getElementById("loginError").classList.remove("hidden");
-      }
-    });
-    document.getElementById("accessCodeInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); document.getElementById("codeSubmit").click(); }
-    });
-
+    // URL context
     let selectedBuilding = (()=>{
       try { const v = localStorage.getItem('selectedBuilding'); return v ? Number(v) : null; }
       catch { return null; }
@@ -405,13 +388,43 @@
     const qpBuilding  = urlParams.get('b');
     const qpWD        = urlParams.get('wd') === '1';
 
-    const tokenOrQr = !!linkToken || !!qpBuilding;
-
     if (qpBuilding) {
       selectedBuilding = Number(qpBuilding);
       try { localStorage.setItem('selectedBuilding', selectedBuilding); } catch {}
     }
     if (linkToken) { selectedBuilding = null; } // one-time link = Online
+
+    // == NEW: fully lock out sidebar for token/QR/kiosk ==
+    const tokenOrQr = !!linkToken || !!qpBuilding;
+    function applySidebarVisibility() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const openBtn = document.getElementById('openSidebar');
+
+      const hide = tokenOrQr || isKiosk();
+      if (sidebar) {
+        if (hide) {
+          sidebar.hidden = true;
+          sidebar.style.display = 'none';
+          sidebar.setAttribute('aria-hidden','true');
+          sidebar.setAttribute('inert','');
+        } else {
+          sidebar.hidden = false;
+          sidebar.style.display = '';
+          sidebar.removeAttribute('aria-hidden');
+          sidebar.removeAttribute('inert');
+        }
+      }
+      if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
+      if (openBtn)  { openBtn.style.display = hide ? 'none' : ''; }
+      if (hide) {
+        // If they somehow were on Analytics, bounce back
+        const analyticsPage = document.getElementById('analyticsPage');
+        if (analyticsPage && !analyticsPage.classList.contains('hidden')) {
+          switchToSurvey();
+        }
+      }
+    }
 
     // Validate token (non-blocking)
     async function verifyOneTimeToken() {
@@ -580,6 +593,9 @@
       qrCopy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
+
+      // Apply initial sidebar lock rules after DOM is ready
+      applySidebarVisibility();
     });
 
     // Building selection helpers
@@ -636,6 +652,7 @@
     const backSelectorTab = document.getElementById('backSelectorTab');
     const resetTab = document.getElementById('resetTab');
 
+    // Guard opening when hidden contexts (Discord/QR/Kiosk)
     function openSidebar() {
       if (isKiosk() || tokenOrQr) return;
       sidebar.classList.remove('-translate-x-full');
@@ -661,7 +678,7 @@
     }
     function switchToAnalytics(e) {
       if (e) e.preventDefault();
-      if (isKiosk() || tokenOrQr) return;
+      if (isKiosk() || tokenOrQr) return; // hard block
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.remove('hidden');
@@ -676,19 +693,6 @@
     if (backSelectorTab) backSelectorTab.addEventListener('click', e => { e.preventDefault(); showBuildingSelection(); closeSidebar(); });
     if (resetTab) resetTab.addEventListener('click', e => { e.preventDefault(); location.href = location.pathname + '?reset=1'; });
 
-    function updateUiForViewMode() {
-      const isStudentMode = tokenOrQr || isKiosk();
-      document.body.classList.toggle('student-view', isStudentMode);
-      
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebarOverlay');
-      const openBtn = document.getElementById('openSidebar');
-
-      if (openBtn) openBtn.style.display = isStudentMode ? 'none' : '';
-      if (sidebar) sidebar.style.display = isStudentMode ? 'none' : '';
-      if (overlay) overlay.style.display = isStudentMode ? 'none' : '';
-    }
-
     // Show/hide "Back to selector" only when not on selector page
     function syncBackSelectorVisibility(){
       if (!backSelectorTab) return;
@@ -696,7 +700,7 @@
       backSelectorTab.style.display = onSelectorPage ? 'none' : '';
     }
 
-    // Friendly error builder + showError (unchanged)
+    // Friendly error builder + showError
     function friendlyError(raw, status = 0, usingToken = false) {
       const text = (typeof raw === 'string') ? raw : (raw?.message || '');
       const l = (text || '').toLowerCase();
@@ -877,10 +881,9 @@
       }
     });
 
-    // ===== Kiosk helpers (unchanged behavior; no extra zooming applied) =====
+    // ===== Kiosk helpers =====
     const kioskEnterBtn = document.getElementById('kioskEnter');
     const kioskExitBtn  = document.getElementById('kioskExit');
-    const backFab       = document.getElementById('backFab');
     const KIOSK_KEY = 'kioskMode';
     function isKiosk(){ try { return localStorage.getItem(KIOSK_KEY) === '1'; } catch { return false; } }
     function setKiosk(v){ try { v ? localStorage.setItem(KIOSK_KEY,'1') : localStorage.removeItem(KIOSK_KEY); } catch {} applyKiosk(v); }
@@ -911,20 +914,30 @@
         try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch {}
       }
       syncFabVisibility();
-      updateUiForViewMode();
+      applySidebarVisibility(); // keep sidebar locked in kiosk and unlocked otherwise (unless token/QR)
     }
     function syncFabVisibility(){
       const onSurvey = !surveyPage.classList.contains('hidden');
       const tokenMode = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
       const kioskActive = isKiosk();
       if (kioskEnterBtn) kioskEnterBtn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
-      if (backFab) backFab.style.display           = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
     }
     function blockScroll(e){ if (isKiosk()) { e.preventDefault(); } }
     window.addEventListener('touchmove', blockScroll, {passive:false});
     window.addEventListener('wheel', blockScroll, {passive:false});
     document.addEventListener('focusout', () => { if (isKiosk()) { setTimeout(() => { window.scrollTo(0,0); }, 50); } });
     if (kioskEnterBtn) kioskEnterBtn.addEventListener('click', ()=> setKiosk(true));
+
+    // NEW: auto-exit kiosk cleanly if fullscreen is exited via Esc or system UI
+    function fsChangeHandler(){
+      if (isKiosk() && !document.fullscreenElement) {
+        setKiosk(false); // removes kiosk locks so the page doesn't freeze
+      }
+    }
+    document.addEventListener('fullscreenchange', fsChangeHandler);
+    document.addEventListener('webkitfullscreenchange', fsChangeHandler); // Safari
+
+    // 5-tap exit (top-right hot corner)
     let taps = 0, timer = null;
     function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
     function handleExitTap(){ taps += 1; if (!timer) { timer = setTimeout(resetTapCounter, 1500); } if (taps >= 5) { resetTapCounter(); setKiosk(false); } }
@@ -932,6 +945,8 @@
       kioskExitBtn.addEventListener('click', handleExitTap, {passive:true});
       kioskExitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
     }
+
+    // Kiosk key guards
     window.addEventListener('keydown', (e)=>{
       if (!isKiosk()) return;
       const tag = (e.target && e.target.tagName) || '';
@@ -940,23 +955,25 @@
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
       if (e.key === 'F5' || (ctrlOrCmd && (e.key.toLowerCase() === 'r' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'n'))) e.preventDefault();
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) e.preventDefault();
-      if (e.key === 'Escape') e.preventDefault();
+      if (e.key === 'Escape') e.preventDefault(); // we also listen to fullscreenchange to cleanly exit if system still leaves fullscreen
     });
     window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) { e.preventDefault(); } });
 
-    // Back to selector floating FAB (if present)
-    const backFabBtn = document.getElementById('backFab');
-    if (backFabBtn) backFabBtn.addEventListener('click', (e)=>{ e.preventDefault(); showBuildingSelection(); });
+    // Back to selector via sidebar (visibility handled elsewhere)
+    const backFabBtn = null; // no floating back button now
 
     // Init page
     if (hasOneTimeToken) { showSurveyForm(); }
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
+
+    // Ensure correct visibility on load
     syncFabVisibility();
     syncBackSelectorVisibility();
-    updateUiForViewMode();
+    applySidebarVisibility(); // final pass
   </script>
 
+  <!-- Floating FABs -->
   <button id="kioskEnter" class="fab" aria-label="Enter tablet mode" title="Enter tablet mode">Enter Tablet mode</button>
   <button id="kioskExit" aria-label="Exit tablet mode (tap 5 times)"></button>
 </body>
