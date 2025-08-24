@@ -6,12 +6,10 @@
   <meta name="color-scheme" content="light">
   <title>Student Satisfaction Survey</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-  <!-- Loosen CSP for Power BI iframe -->
   <meta http-equiv="Content-Security-Policy"
         content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 
   <style>
-    /* Floating buttons */
     .fab{
       position:fixed; min-width:44px; height:44px; border-radius:9999px;
       padding:0 14px; font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;
@@ -20,15 +18,12 @@
     #kioskEnter{ right:12px; bottom:12px; background:#000; color:#fff; }
     #kioskEnter:hover{ background:#111; }
 
-    /* Hide FABs when in kiosk */
     .kiosk-mode #kioskEnter{ display:none !important; }
 
-    /* Invisible exit hot-corner (TOP RIGHT) only in kiosk mode */
     #kioskExit{ display:none; position:fixed; right:0; top:0; width:56px; height:56px; z-index:70; background:transparent; cursor:pointer; }
     #kioskExit:focus{ outline:2px solid rgba(185,28,28,.6); outline-offset:2px; }
     .kiosk-mode #kioskExit{ display:block; }
 
-    /* Lock down chrome in kiosk */
     .kiosk-mode #adminControls,
     .kiosk-mode #sidebar,
     .kiosk-mode #sidebarOverlay,
@@ -61,7 +56,7 @@
         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
-        Survey
+        Analytics
       </a>
 
       <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
@@ -87,13 +82,9 @@
     </nav>
   </div>
 
-  <!-- Sidebar overlay -->
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-  <!-- Main content -->
   <div class="flex-1 flex flex-col" id="mainWrapper">
-
-    <!-- Top header with hamburger -->
     <header class="h-16 flex items-center px-4 border-b bg-white">
       <button id="openSidebar" class="text-gray-600 hover:text-gray-800 mr-3" aria-label="Open menu">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +94,7 @@
       <h1 class="text-lg font-semibold text-gray-800">DTU Python Support Survey</h1>
     </header>
 
-    <!-- Building Selection Page -->
+    <!-- Building Selection -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-between mb-6">
@@ -133,7 +124,6 @@
             <div class="text-sm text-gray-500">Secondary Python Support Office</div>
           </button>
 
-          <!-- Custom Building Section -->
           <div class="border-2 border-gray-200 rounded-lg p-4">
             <div class="font-semibold text-gray-700 mb-2">Other Building</div>
             <div class="text-sm text-gray-500 mb-3">Enter building number</div>
@@ -156,7 +146,7 @@
       </div>
     </div>
 
-    <!-- Survey Page -->
+    <!-- Survey -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
       <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-center mb-6">
@@ -164,9 +154,7 @@
         </div>
 
         <form id="surveyForm" class="space-y-6">
-          <!-- Role + Workshop -->
           <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
-            <!-- Roles -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
               <label class="inline-flex items-center text-gray-700">
                 <input type="radio" name="role" value="student" class="form-radio" checked />
@@ -178,7 +166,6 @@
               </label>
             </div>
 
-            <!-- Workshop Yes/No -->
             <div class="order-3 sm:order-2">
               <fieldset>
                 <legend class="block text-gray-700 mb-2 font-medium">Attended workshop?</legend>
@@ -195,7 +182,6 @@
               </fieldset>
             </div>
 
-            <!-- Student number -->
             <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
               <div class="flex">
@@ -204,7 +190,6 @@
               </div>
             </div>
 
-            <!-- Username (employee) -->
             <div id="usernameWrapper" class="hidden order-2 sm:order-3 sm:col-span-3">
               <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
               <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
@@ -250,7 +235,7 @@
       </div>
     </div>
 
-    <!-- Analytics Page (opened from sidebar) -->
+    <!-- Analytics -->
     <div id="analyticsPage" class="flex-1 p-0 hidden">
       <div class="h-full w-full bg-white">
         <div class="h-full w-full">
@@ -332,17 +317,15 @@
     </div>
   </div>
 
-  <!-- QR code library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <script type="module">
-    // Endpoints
     const endpoint       = "https://python-support-proxy.azurewebsites.net/api/surveyProxy";
     const tokenEndpoint  = "https://python-support-proxy.azurewebsites.net/api/issueToken";
     const qrSignEndpoint = "https://python-support-proxy.azurewebsites.net/api/qrRedirect";
-    const STORAGE_KEY = "surveySupportAuth"; // "YYYY-MM-DD|key"
+    const STORAGE_KEY = "surveySupportAuth";
 
-    // Optional reset by URL
+    // Reset support
     (function () {
       const params = new URLSearchParams(location.search);
       if (params.get('reset') === '1') {
@@ -374,10 +357,38 @@
       document.getElementById("loginError").classList.add("hidden");
     }
 
-    const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || new URLSearchParams(window.location.search).get('token');
-    if (hasOneTimeToken) { hideLogin(); } else if (isAuthValid()) { hideLogin(); } else { showLogin(); }
+    // === FIX: treat QR (?b=) like token to bypass login for students ===
+    const sp = new URLSearchParams(window.location.search);
+    const hasOneTimeToken = sp.get('t') || sp.get('token');
+    const isQrLink = sp.has('b');
 
-    // URL context
+    if (hasOneTimeToken || isQrLink) { hideLogin(); }
+    else if (isAuthValid())          { hideLogin(); }
+    else                             { showLogin(); }
+
+    // Login submit
+    document.getElementById("codeSubmit").addEventListener("click", async () => {
+      const input = document.getElementById("accessCodeInput").value.trim();
+      const ok = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": input },
+        body: JSON.stringify({ ping: true })
+      }).then(r => r.ok).catch(() => false);
+
+      if (ok) {
+        const today = new Date().toISOString().slice(0, 10);
+        try { localStorage.setItem(STORAGE_KEY, `${today}|${input}`); } catch {}
+        hideLogin();
+        document.getElementById("accessCodeInput").value = "";
+      } else {
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+    });
+    document.getElementById("accessCodeInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); document.getElementById("codeSubmit").click(); }
+    });
+
+    // Selected building / query params
     let selectedBuilding = (()=>{
       try { const v = localStorage.getItem('selectedBuilding'); return v ? Number(v) : null; }
       catch { return null; }
@@ -394,7 +405,7 @@
     }
     if (linkToken) { selectedBuilding = null; } // one-time link = Online
 
-    // == NEW: fully lock out sidebar for token/QR/kiosk ==
+    // Sidebar lock for token/QR/kiosk
     const tokenOrQr = !!linkToken || !!qpBuilding;
     function applySidebarVisibility() {
       const sidebar = document.getElementById('sidebar');
@@ -418,7 +429,6 @@
       if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
       if (openBtn)  { openBtn.style.display = hide ? 'none' : ''; }
       if (hide) {
-        // If they somehow were on Analytics, bounce back
         const analyticsPage = document.getElementById('analyticsPage');
         if (analyticsPage && !analyticsPage.classList.contains('hidden')) {
           switchToSurvey();
@@ -426,7 +436,7 @@
       }
     }
 
-    // Validate token (non-blocking)
+    // Token verify (non-blocking)
     async function verifyOneTimeToken() {
       if (!linkToken) return true;
       try {
@@ -445,12 +455,10 @@
       } catch { return true; }
     }
 
-    // Elements
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
     const surveyPage            = document.getElementById('surveyPage');
     const analyticsPage         = document.getElementById('analyticsPage');
 
-    // Generate one-time link (always Online)
     async function generateOneTimeLink() {
       if (isKiosk()) return;
       try {
@@ -459,18 +467,15 @@
           headers: { 'Content-Type': 'application/json', 'x-api-key': getSavedKey()[1] || '' },
           body: JSON.stringify({ expiresHours: 24, building_Number: 'Online' })
         });
-
         if (!resp.ok) {
           const txt = await resp.text().catch(()=> '');
           showError('Could not generate link. ' + (txt || ''), resp.status);
           return;
         }
-
         const data = await resp.json().catch(()=>({}));
         const baseUrl = window.location.origin + window.location.pathname;
         const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
         const url = data.url || data.oneTimeUrl || `${baseUrl}?token=${encodeURIComponent(data.token)}${wd}`;
-
         try { await navigator.clipboard.writeText(url); } catch {}
         alert('Discord link copied to clipboard:\n' + url);
       } catch (e) {
@@ -479,7 +484,6 @@
       }
     }
 
-    // Ready
     (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
       const btnLink = document.getElementById('btnGenerateLink');
       if (btnLink) btnLink.addEventListener('click', generateOneTimeLink);
@@ -524,7 +528,7 @@
       if (document.getElementById('btnGenerateQR')) {
         document.getElementById('btnGenerateQR').addEventListener('click', openQrModal);
       }
-      qrModal.querySelectorAll('.qr-quick').forEach(btn => {
+      qrModal?.querySelectorAll('.qr-quick').forEach(btn => {
         btn.addEventListener('click', () => {
           const v = btn.getAttribute('data-building');
           qrBuildingInp.value = v;
@@ -588,13 +592,12 @@
           showError('Unexpected error while generating the QR.');
         }
       }
-      qrCreate.addEventListener('click', createQr);
-      qrClose.addEventListener('click', closeQrModal);
-      qrCopy.addEventListener('click', async () => {
+      qrCreate?.addEventListener('click', createQr);
+      qrClose?.addEventListener('click', closeQrModal);
+      qrCopy?.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
       });
 
-      // Apply initial sidebar lock rules after DOM is ready
       applySidebarVisibility();
     });
 
@@ -652,7 +655,6 @@
     const backSelectorTab = document.getElementById('backSelectorTab');
     const resetTab = document.getElementById('resetTab');
 
-    // Guard opening when hidden contexts (Discord/QR/Kiosk)
     function openSidebar() {
       if (isKiosk() || tokenOrQr) return;
       sidebar.classList.remove('-translate-x-full');
@@ -664,9 +666,9 @@
       sidebarOverlay.classList.add('hidden');
       document.body.classList.remove('overflow-hidden');
     }
-    if (openSidebarBtn)  openSidebarBtn.addEventListener('click', openSidebar);
-    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
-    if (sidebarOverlay)  sidebarOverlay.addEventListener('click', closeSidebar);
+    openSidebarBtn?.addEventListener('click', openSidebar);
+    closeSidebarBtn?.addEventListener('click', closeSidebar);
+    sidebarOverlay?.addEventListener('click', closeSidebar);
 
     function switchToSurvey(e) {
       if (e) e.preventDefault();
@@ -678,7 +680,7 @@
     }
     function switchToAnalytics(e) {
       if (e) e.preventDefault();
-      if (isKiosk() || tokenOrQr) return; // hard block
+      if (isKiosk() || tokenOrQr) return;
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.remove('hidden');
@@ -688,25 +690,22 @@
       syncFabVisibility();
       syncBackSelectorVisibility();
     }
-    if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
-    if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
-    if (backSelectorTab) backSelectorTab.addEventListener('click', e => { e.preventDefault(); showBuildingSelection(); closeSidebar(); });
-    if (resetTab) resetTab.addEventListener('click', e => { e.preventDefault(); location.href = location.pathname + '?reset=1'; });
+    surveyTab?.addEventListener('click', switchToSurvey);
+    analyticsTab?.addEventListener('click', switchToAnalytics);
+    backSelectorTab?.addEventListener('click', e => { e.preventDefault(); showBuildingSelection(); closeSidebar(); });
+    resetTab?.addEventListener('click', e => { e.preventDefault(); location.href = location.pathname + '?reset=1'; });
 
-    // Show/hide "Back to selector" only when not on selector page
     function syncBackSelectorVisibility(){
       if (!backSelectorTab) return;
       const onSelectorPage = !buildingSelectionPage.classList.contains('hidden');
       backSelectorTab.style.display = onSelectorPage ? 'none' : '';
     }
 
-    // Friendly error builder + showError
     function friendlyError(raw, status = 0, usingToken = false) {
       const text = (typeof raw === 'string') ? raw : (raw?.message || '');
       const l = (text || '').toLowerCase();
       let title = "We couldn't submit your response";
       let message = 'Please try again in a moment.';
-
       const roleNow = (document.querySelector('input[name="role"]:checked')?.value || 'student');
       if (l.includes('study number does not exist') || l.includes('student number does not exist')) {
         if (roleNow === 'employee') { title = 'DTU username not found'; message = "We couldn't find that DTU username. Please enter your DTU credentials (letters only, e.g. 'manufer') and try again."; }
@@ -752,7 +751,7 @@
       document.getElementById('errorModal').classList.remove('hidden');
     }
 
-    // Role toggle (clears inactive field)
+    // Role toggle (resets abandoned field)
     const form = document.getElementById("surveyForm");
     const roleInputs      = form.querySelectorAll('input[name="role"]');
     const studentWrapper  = document.getElementById('studentWrapper');
@@ -780,7 +779,6 @@
     }
     toggleRole();
 
-    // Student number validation helper
     function setStudentCustomValidation() {
       const isStudent = (form.role.value === 'student');
       if (!isStudent || studentNumInput.disabled) { studentNumInput.setCustomValidity(''); return; }
@@ -871,7 +869,6 @@
       }
     });
 
-    // Thank-you close behavior
     closeBtn.addEventListener('click', () => {
       const linkToken = new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token');
       if (redirectOnThankYouClose && linkToken) {
@@ -881,7 +878,7 @@
       }
     });
 
-    // ===== Kiosk helpers =====
+    // ===== Kiosk helpers (with Esc unfreeze fix) =====
     const kioskEnterBtn = document.getElementById('kioskEnter');
     const kioskExitBtn  = document.getElementById('kioskExit');
     const KIOSK_KEY = 'kioskMode';
@@ -914,7 +911,7 @@
         try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch {}
       }
       syncFabVisibility();
-      applySidebarVisibility(); // keep sidebar locked in kiosk and unlocked otherwise (unless token/QR)
+      applySidebarVisibility();
     }
     function syncFabVisibility(){
       const onSurvey = !surveyPage.classList.contains('hidden');
@@ -926,27 +923,24 @@
     window.addEventListener('touchmove', blockScroll, {passive:false});
     window.addEventListener('wheel', blockScroll, {passive:false});
     document.addEventListener('focusout', () => { if (isKiosk()) { setTimeout(() => { window.scrollTo(0,0); }, 50); } });
-    if (kioskEnterBtn) kioskEnterBtn.addEventListener('click', ()=> setKiosk(true));
+    kioskEnterBtn?.addEventListener('click', ()=> setKiosk(true));
 
-    // NEW: auto-exit kiosk cleanly if fullscreen is exited via Esc or system UI
+    // Unfreeze if user exits fullscreen (Esc)
     function fsChangeHandler(){
       if (isKiosk() && !document.fullscreenElement) {
-        setKiosk(false); // removes kiosk locks so the page doesn't freeze
+        setKiosk(false);
       }
     }
     document.addEventListener('fullscreenchange', fsChangeHandler);
-    document.addEventListener('webkitfullscreenchange', fsChangeHandler); // Safari
+    document.addEventListener('webkitfullscreenchange', fsChangeHandler);
 
-    // 5-tap exit (top-right hot corner)
+    // 5-tap exit
     let taps = 0, timer = null;
     function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
     function handleExitTap(){ taps += 1; if (!timer) { timer = setTimeout(resetTapCounter, 1500); } if (taps >= 5) { resetTapCounter(); setKiosk(false); } }
-    if (kioskExitBtn){
-      kioskExitBtn.addEventListener('click', handleExitTap, {passive:true});
-      kioskExitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
-    }
+    kioskExitBtn?.addEventListener('click', handleExitTap, {passive:true});
+    kioskExitBtn?.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
 
-    // Kiosk key guards
     window.addEventListener('keydown', (e)=>{
       if (!isKiosk()) return;
       const tag = (e.target && e.target.tagName) || '';
@@ -955,22 +949,18 @@
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
       if (e.key === 'F5' || (ctrlOrCmd && (e.key.toLowerCase() === 'r' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'n'))) e.preventDefault();
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) e.preventDefault();
-      if (e.key === 'Escape') e.preventDefault(); // we also listen to fullscreenchange to cleanly exit if system still leaves fullscreen
+      if (e.key === 'Escape') e.preventDefault();
     });
     window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) { e.preventDefault(); } });
 
-    // Back to selector via sidebar (visibility handled elsewhere)
-    const backFabBtn = null; // no floating back button now
-
-    // Init page
+    // Init
     if (hasOneTimeToken) { showSurveyForm(); }
-    else if (selectedBuilding === null) { showBuildingSelection(); }
+    else if (selectedBuilding === null && !isQrLink) { showBuildingSelection(); }
     else { showSurveyForm(); }
 
-    // Ensure correct visibility on load
     syncFabVisibility();
     syncBackSelectorVisibility();
-    applySidebarVisibility(); // final pass
+    applySidebarVisibility();
   </script>
 
   <!-- Floating FABs -->
