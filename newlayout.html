@@ -10,6 +10,7 @@
         content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 
   <style>
+    /* Floating action buttons for kiosk mode */
     .fab{
       position:fixed; min-width:44px; height:44px; border-radius:9999px;
       padding:0 14px; font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;
@@ -17,7 +18,6 @@
     }
     #kioskEnter{ right:12px; bottom:12px; background:#000; color:#fff; }
     #kioskEnter:hover{ background:#111; }
-
     .kiosk-mode #kioskEnter{ display:none !important; }
 
     #kioskExit{ display:none; position:fixed; right:0; top:0; width:56px; height:56px; z-index:70; background:transparent; cursor:pointer; }
@@ -36,6 +36,27 @@
 
     .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
     .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
+
+    /* ==== Student-flow layout (token/QR/kiosk) ==== */
+    /* Hide top bar and use a tall, centered survey card so students see only the form */
+    body.student-flow header { display: none !important; }
+    body.student-flow #surveyPage { padding: 0 !important; }
+    body.student-flow #buildingSelectionPage,
+    body.student-flow #analyticsPage { display: none !important; } /* just in case */
+    body.student-flow #surveyCard{
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+      min-height: 100vh;      /* fallback */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    @supports (min-height: 100svh) {
+      body.student-flow #surveyCard { min-height: 100svh; }
+    }
+    /* Keep reasonable width so nothing overflows */
+    body.student-flow #surveyCard { max-width: 44rem; } /* ~704px */
   </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
@@ -56,7 +77,7 @@
         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
-        Analytics
+        Survey
       </a>
 
       <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
@@ -85,6 +106,7 @@
   <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
   <div class="flex-1 flex flex-col" id="mainWrapper">
+    <!-- TOP BAR (hidden in student-flow) -->
     <header class="h-16 flex items-center px-4 border-b bg-white">
       <button id="openSidebar" class="text-gray-600 hover:text-gray-800 mr-3" aria-label="Open menu">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,11 +379,10 @@
       document.getElementById("loginError").classList.add("hidden");
     }
 
-    // === FIX: treat QR (?b=) like token to bypass login for students ===
+    // One-time token / QR flags
     const sp = new URLSearchParams(window.location.search);
     const hasOneTimeToken = sp.get('t') || sp.get('token');
     const isQrLink = sp.has('b');
-
     if (hasOneTimeToken || isQrLink) { hideLogin(); }
     else if (isAuthValid())          { hideLogin(); }
     else                             { showLogin(); }
@@ -405,14 +426,22 @@
     }
     if (linkToken) { selectedBuilding = null; } // one-time link = Online
 
+    // ===== Utilities to toggle student-flow layout =====
+    function isKiosk(){ try { return localStorage.getItem('kioskMode') === '1'; } catch { return false; } }
+    function applyStudentFlowLayout() {
+      const tokenOrQr = !!(linkToken || qpBuilding);
+      const on = tokenOrQr || isKiosk();
+      document.body.classList.toggle('student-flow', on);
+    }
+
     // Sidebar lock for token/QR/kiosk
     const tokenOrQr = !!linkToken || !!qpBuilding;
     function applySidebarVisibility() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');
       const openBtn = document.getElementById('openSidebar');
-
       const hide = tokenOrQr || isKiosk();
+
       if (sidebar) {
         if (hide) {
           sidebar.hidden = true;
@@ -428,12 +457,14 @@
       }
       if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
       if (openBtn)  { openBtn.style.display = hide ? 'none' : ''; }
+
       if (hide) {
         const analyticsPage = document.getElementById('analyticsPage');
         if (analyticsPage && !analyticsPage.classList.contains('hidden')) {
           switchToSurvey();
         }
       }
+      applyStudentFlowLayout();  // << ensure top bar hides/shows together
     }
 
     // Token verify (non-blocking)
@@ -496,7 +527,7 @@
         });
       }
 
-      // QR modal wiring
+      // QR modal wiring (unchanged)
       const qrModal   = document.getElementById('qrModal');
       const qrCreate  = document.getElementById('qrCreate');
       const qrClose   = document.getElementById('qrClose');
@@ -599,6 +630,7 @@
       });
 
       applySidebarVisibility();
+      applyStudentFlowLayout(); // also run here
     });
 
     // Building selection helpers
@@ -878,11 +910,10 @@
       }
     });
 
-    // ===== Kiosk helpers (with Esc unfreeze fix) =====
+    // ===== Kiosk helpers (Esc unfreeze fix retained) =====
     const kioskEnterBtn = document.getElementById('kioskEnter');
     const kioskExitBtn  = document.getElementById('kioskExit');
     const KIOSK_KEY = 'kioskMode';
-    function isKiosk(){ try { return localStorage.getItem(KIOSK_KEY) === '1'; } catch { return false; } }
     function setKiosk(v){ try { v ? localStorage.setItem(KIOSK_KEY,'1') : localStorage.removeItem(KIOSK_KEY); } catch {} applyKiosk(v); }
     let kioskHistoryTrap = false;
     function onPop(){ if (kioskHistoryTrap) { history.pushState({kiosk:1}, '', location.href); } }
@@ -912,9 +943,10 @@
       }
       syncFabVisibility();
       applySidebarVisibility();
+      applyStudentFlowLayout(); // << make sure header hides/shows
     }
     function syncFabVisibility(){
-      const onSurvey = !surveyPage.classList.contains('hidden');
+      const onSurvey = !document.getElementById('surveyPage').classList.contains('hidden');
       const tokenMode = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
       const kioskActive = isKiosk();
       if (kioskEnterBtn) kioskEnterBtn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
@@ -925,7 +957,6 @@
     document.addEventListener('focusout', () => { if (isKiosk()) { setTimeout(() => { window.scrollTo(0,0); }, 50); } });
     kioskEnterBtn?.addEventListener('click', ()=> setKiosk(true));
 
-    // Unfreeze if user exits fullscreen (Esc)
     function fsChangeHandler(){
       if (isKiosk() && !document.fullscreenElement) {
         setKiosk(false);
@@ -961,6 +992,7 @@
     syncFabVisibility();
     syncBackSelectorVisibility();
     applySidebarVisibility();
+    applyStudentFlowLayout();  // << run once on boot
   </script>
 
   <!-- Floating FABs -->
