@@ -2,44 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="color-scheme" content="light">
   <title>Student Satisfaction Survey</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <!-- Loosen CSP for Power BI iframe (safe to include) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 
   <style>
-    /* ===== Sidebar (your snippet, with minimal styling) ===== */
-    .sidebar {
-      position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
-      background: #fff; border-right: 1px solid #e5e7eb; z-index: 40;
-      display: flex; flex-direction: column; transform: translateX(0);
-    }
-    .sidebar-header { height: 64px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #e5e7eb; }
-    .sidebar-title { font-size: 1.125rem; font-weight: 600; color: #1f2937; }
-    .sidebar-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; }
-    .sidebar-nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 8px; color: #374151; text-decoration: none;
-    }
-    .sidebar-nav-item:hover { background: #f3f4f6; }
-    .sidebar-nav-item.active { background: #f9fafb; border-right: 4px solid #ef4444; }
-    .sidebar-nav-icon { width: 20px; height: 20px; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 30; }
-
-    /* Hide sidebar in visitor or kiosk modes */
-    .kiosk-mode #sidebar, .visitor-mode #sidebar, .visitor-mode #sidebarOverlay { display: none !important; }
-
-    /* Layout padding when sidebar is visible on desktop */
-    @media (min-width: 1024px) {
-      body:not(.kiosk-mode):not(.visitor-mode) .main-with-sidebar {
-        padding-left: 260px;
-      }
-    }
-
-    /* ===== Floating buttons (FABs) ===== */
+    /* Floating buttons */
     .fab{
       position:fixed; min-width:44px; height:44px; border-radius:9999px;
       padding:0 14px; font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;
@@ -50,9 +22,9 @@
     #backFab{ left:12px; top:12px; background:#6b7280; color:#fff; }
     #backFab:hover{ background:#4b5563; }
 
-    /* Hide FABs in kiosk/visitor modes */
-    .kiosk-mode #kioskEnter, .kiosk-mode #backFab { display:none !important; }
-    .visitor-mode #kioskEnter, .visitor-mode #backFab { display:none !important; }
+    /* Hide FABs in kiosk/when not applicable */
+    .kiosk-mode #kioskEnter{ display:none !important; }
+    .kiosk-mode #backFab{ display:none !important; }
 
     /* Invisible exit hot-corner (TOP RIGHT) only in kiosk mode */
     #kioskExit{ display:none; position:fixed; right:0; top:0; width:56px; height:56px; z-index:70; background:transparent; cursor:pointer; }
@@ -60,45 +32,51 @@
     .kiosk-mode #kioskExit{ display:block; }
 
     /* Lock down app chrome in kiosk */
-    .kiosk-mode #buildingSelectionPage { display:none !important; }
+    .kiosk-mode #adminControls,
+    .kiosk-mode #sidebar,
+    .kiosk-mode #sidebarOverlay,
+    .kiosk-mode #buildingSelectionPage,
+    .kiosk-mode #analyticsPage { display:none !important; }
 
     /* Fixed, non-scrollable viewport in kiosk */
     .kiosk-mode html, .kiosk-mode body { height:100%; overflow:hidden; }
     .kiosk-mode body{ position:fixed; inset:0; height:100vh; width:100vw; overscroll-behavior:none; }
-
+    .kiosk-mode #mainWrapper{ height:100vh; overflow:hidden; }
     /* Keep interactions but avoid accidental gestures */
     .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
     .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
 
-    /* Survey card auto-scale in kiosk */
+    /* Survey card (no zooming—natural size) */
     #surveyCard { transform-origin: top center; }
-
-    /* Admin controls row (buttons on selector) hidden in kiosk/visitor */
-    .kiosk-mode #adminControls, .visitor-mode #adminControls { display: none !important; }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen main-with-sidebar">
+<body class="bg-gray-50 flex min-h-screen">
 
-  <!-- ===== Sidebar (hidden for QR/Discord/kiosk) ===== -->
-  <div id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-      <h2 class="sidebar-title">Menu</h2>
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out">
+    <div class="flex items-center justify-between h-16 px-4 border-b">
+      <h2 class="text-lg font-semibold text-gray-800">Menu</h2>
+      <button id="closeSidebar" class="text-gray-500 hover:text-gray-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
     </div>
-    <nav class="sidebar-nav">
-      <a href="#" id="surveyTab" class="sidebar-nav-item active">
-        <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <nav class="mt-8">
+      <a href="#" id="surveyTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 border-r-4 border-red-500 bg-gray-50">
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
         Survey
       </a>
-      <a href="#" id="analyticsTab" class="sidebar-nav-item">
-        <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      <a href="#" id="analyticsTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2z"></path>
         </svg>
         Analytics
       </a>
-      <a href="#" id="resetTab" class="sidebar-nav-item">
-        <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="#" id="resetTab" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100">
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-5.292M20 14a8 8 0 01-14 5.292"/>
         </svg>
         Reset / Logout
@@ -106,19 +84,17 @@
     </nav>
   </div>
 
-  <!-- Sidebar overlay (unused here, but kept for parity) -->
-  <div id="sidebarOverlay" class="hidden modal-overlay"></div>
+  <!-- Sidebar overlay -->
+  <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-  <!-- ===== Main content ===== -->
-  <div id="mainWrapper" class="min-h-screen flex flex-col">
+  <!-- Main content -->
+  <div class="flex-1 flex flex-col" id="mainWrapper">
 
     <!-- Building Selection Page -->
     <div id="buildingSelectionPage" class="flex-1 flex items-center justify-center p-4">
       <div class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Select Your Building</h2>
-
-          <!-- Admin controls (hidden in kiosk/visitor) -->
           <div id="adminControls" class="flex items-center gap-3 sm:gap-4">
             <label class="inline-flex items-center text-gray-700">
               <input id="workshopDayToggle" type="checkbox" class="h-5 w-5 text-red-500 border-gray-300 rounded">
@@ -129,6 +105,9 @@
             </button>
             <button id="btnGenerateQR" type="button" class="text-sm bg-white border border-red-500 text-red-600 px-3 py-2 rounded hover:bg-red-50">
               QR
+            </button>
+            <button id="btnOpenAnalytics" type="button" class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-50">
+              PowerBI
             </button>
           </div>
         </div>
@@ -169,7 +148,7 @@
 
     <!-- Survey Page -->
     <div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
-      <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
+      <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx_auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
         <div class="flex items-center justify-center mb-6">
           <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
         </div>
@@ -260,6 +239,15 @@
         </form>
       </div>
     </div>
+
+    <!-- (Optional) Full-page Analytics backup -->
+    <div id="analyticsPage" class="flex-1 p-0 hidden">
+      <div class="h-full w-full bg-white">
+        <div class="h-full w-full">
+          <iframe loading="lazy" title="Python Support Statistics BACKUP" class="w-full h-full" style="min-height: calc(100vh - 4rem);" src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9" frameborder="0" allowFullScreen="true"></iframe>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Supporter Login Modal -->
@@ -272,7 +260,7 @@
     </div>
   </div>
 
-  <!-- Thank-you Modal -->
+  <!-- Modals -->
   <div id="thankYouModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <h2 class="text-xl font-semibold mb-2">We value your time</h2>
@@ -281,15 +269,45 @@
     </div>
   </div>
 
-  <!-- Error Modal -->
   <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs mx-auto">
       <div class="flex justify-center mb-3">
-        <svg class="w-16 h-16 text-red-600" fill="currentColor" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 511.999 463.377"><path d="M289.639 9.137c12.411 7.25 23.763 18.883 33.037 34.913l.97 1.813 1.118 1.941 174.174 302.48c33.712 56.407-1.203 113.774-66.174 112.973v.12H73.485c-.895 0-1.78-.04-2.657-.112-59.104-.799-86.277-54.995-61.909-106.852.842-1.805 1.816-3.475 2.816-5.201L189.482 43.959l-.053-.032c9.22-15.786 20.717-27.457 33.411-34.805C243.788-3 268.711-3.086 289.639 9.137zM255.7 339.203c13.04 0 23.612 10.571 23.612 23.612 0 13.041-10.572 23.613-23.612 23.613-13.041 0-23.613-10.572-23.613-23.613s10.572-23.612 23.613-23.612zm17.639-35.379c-.794 19.906-34.506 19.931-35.278-.006-3.41-34.108-12.129-111.541-11.853-143.591.284-9.874 8.469-15.724 18.939-17.955 3.231-.686 6.781-1.024 10.357-1.019 3.595.008 7.153.362 10.387 1.051 10.818 2.303 19.309 8.392 19.309 18.446l-.043 1.005-11.818 142.069z"/></svg>
+        <svg class="w-16 h-16 text-red-600" fill="currentColor" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 511.999 463.377"><path d="M289.639 9.137c12.411 7.25 23.763 18.883 33.037 34.913l.97 1.813 1.118 1.941 174.174 302.48c33.712 56.407-1.203 113.774-66.174 112.973v.12H73.485c-.895 0-1.78-.04-2.657-.112-59.104-.799-86.277-54.995-61.909-106.852.842-1.805 1.816-3.475 2.816-5.201L189.482 43.959l-.053-.032c9.22-15.786 20.717-27.457 33.411-34.805C243.788-3 268.711-3.086 289.639 9.137zM255.7 339.203c13.04 0 23.612 10.571 23.612 23.612 0 13.041-10.572 23.613-23.612 23.613-13.041 0-23.613-10.572-23.613-23.613s10.572-23.612 23.613-23.612zm17.639-35.379c-.794 19.906-34.506 19.931-35.278-.006-3.41-34.108-12.129-111.541-11.853-143.591.284-9.874 8.469-15.724 18.939-17.955 3.231-.686 6.781-1.024 10.357-1.019 3.595.008 7.153.362 10.387 1.051 10.818 2.303 19.309 8.392 19.309 18.446l-.043 1.005-11.818 142.069z"/></svg>
       </div>
       <h2 id="errorTitle" class="text-xl font-semibold mb-2 text-gray-800">We couldn't submit your response</h2>
       <p class="error-message mb-4 text-gray-600">An error occurred while submitting your response.</p>
       <button id="closeErrorModal" class="mt-2 bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Analytics Modal (opens from Building Selector) -->
+  <div id="analyticsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-5xl">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <h3 class="text-lg font-semibold text-gray-800">PowerBI Analytics</h3>
+        <button id="analyticsClose" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Close">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="pbiFallback" class="px-4 py-2 text-sm text-gray-600">
+        If the report doesn’t appear, your browser may be blocking third-party cookies or frame embeds.
+        <a id="pbiOpenExternal"
+           href="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9"
+           target="_blank" rel="noopener" class="text-red-600 underline ml-1">Open in Power BI</a>
+      </div>
+
+      <div class="p-0">
+        <div class="w-full" style="height: calc(100vh - 200px);">
+          <iframe
+            id="pbiFrame"
+            title="Python Support Statistics LiveVersion"
+            class="w-full h-full"
+            src="https://app.powerbi.com/reportEmbed?reportId=c477ad7d-6b44-46ad-9c62-c9b66d6ac02b&autoAuth=true&ctid=f251f123-c9ce-448e-9277-34bb285911d9"
+            frameborder="0"
+            allowfullscreen="true"></iframe>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -335,7 +353,7 @@
     </div>
   </div>
 
-  <!-- QR code lib -->
+  <!-- QR code library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <script type="module">
@@ -344,30 +362,22 @@
     const tokenEndpoint  = "https://python-support-proxy.azurewebsites.net/api/issueToken";
     const qrSignEndpoint = "https://python-support-proxy.azurewebsites.net/api/qrRedirect";
     const WORKSHOP_DAY_KEY = "workshopDay";
+
+    // Supporter auth (persist for the day)
     const STORAGE_KEY = "surveySupportAuth"; // "YYYY-MM-DD|key"
-
-    // Visitor detection (Discord token OR QR building)
-    const params      = new URLSearchParams(location.search);
-    const linkToken   = params.get('t') || params.get('token');
-    const qpBuilding  = params.get('b');
-    const qpWD        = params.get('wd') === '1';
-    const isVisitor   = !!(linkToken || qpBuilding);
-
-    if (isVisitor) document.body.classList.add('visitor-mode');
 
     // Reset via URL ?reset=1
     (function () {
-      const p = new URLSearchParams(location.search);
-      if (p.get('reset') === '1') {
+      const params = new URLSearchParams(location.search);
+      if (params.get('reset') === '1') {
         try { localStorage.removeItem(STORAGE_KEY); } catch {}
         try { localStorage.removeItem('selectedBuilding'); } catch {}
-        p.delete('reset'); p.delete('t'); p.delete('token'); p.delete('b'); p.delete('wd');
-        const next = location.pathname + (p.toString() ? `?${p.toString()}` : '');
+        params.delete('reset'); params.delete('t'); params.delete('token'); params.delete('b'); params.delete('wd');
+        const next = location.pathname + (params.toString() ? `?${params.toString()}` : '');
         location.replace(next);
       }
     })();
 
-    // Supporter login (skipped if one-time token present)
     function getSavedKey() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -394,11 +404,16 @@
       document.getElementById("loginError").classList.add("hidden");
     }
 
-    if (linkToken) hideLogin();
-    else if (isAuthValid()) hideLogin();
-    else showLogin();
+    const hasOneTimeToken = new URLSearchParams(window.location.search).get('t') || new URLSearchParams(window.location.search).get('token');
+    if (hasOneTimeToken) {
+      hideLogin();
+    } else if (isAuthValid()) {
+      hideLogin();
+    } else {
+      showLogin();
+    }
 
-    // Login submit
+    // Submit on click
     document.getElementById("codeSubmit").addEventListener("click", async () => {
       const input = document.getElementById("accessCodeInput").value.trim();
       const ok = await fetch(endpoint, {
@@ -416,6 +431,8 @@
         document.getElementById("loginError").classList.remove("hidden");
       }
     });
+
+    // Submit on ENTER
     document.getElementById("accessCodeInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -423,13 +440,23 @@
       }
     });
 
-    // Selected building
     let selectedBuilding = (()=>{
-      try { const v = localStorage.getItem('selectedBuilding'); return v ? Number(v) : null; }
-      catch { return null; }
+      try {
+        const v = localStorage.getItem('selectedBuilding');
+        return v ? Number(v) : null;
+      } catch { return null; }
     })();
-    if (qpBuilding) { selectedBuilding = Number(qpBuilding); try { localStorage.setItem('selectedBuilding', selectedBuilding); } catch {} }
-    if (linkToken) { selectedBuilding = null; }
+
+    const urlParams   = new URLSearchParams(location.search);
+    const linkToken   = urlParams.get('t') || urlParams.get('token');
+    const qpBuilding  = urlParams.get('b');
+    const qpWD        = urlParams.get('wd') === '1';
+
+    if (qpBuilding) {
+      selectedBuilding = Number(qpBuilding);
+      try { localStorage.setItem('selectedBuilding', selectedBuilding); } catch {}
+    }
+    if (linkToken) { selectedBuilding = null; } // one-time link = Online
 
     // Pre-validate one-time token on page load (non-blocking)
     async function verifyOneTimeToken() {
@@ -447,33 +474,44 @@
           return false;
         }
         return true;
-      } catch { return true; }
+      } catch {
+        return true;
+      }
     }
 
     // Elements
     const buildingSelectionPage = document.getElementById('buildingSelectionPage');
     const surveyPage            = document.getElementById('surveyPage');
+    const analyticsPage         = document.getElementById('analyticsPage');
+    const resetTab              = document.getElementById('resetTab');
 
-    // Generate one-time link (always Online)
+    // Generate one-time link (always "Online")
     async function generateOneTimeLink() {
-      if (isKiosk()) return;
+      if (isKiosk()) return; // locked
       try {
         const expiresHours = 24;
         const buildingPayload = 'Online';
+
         const resp = await fetch(tokenEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': getSavedKey()[1] || '' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': getSavedKey()[1] || ''
+          },
           body: JSON.stringify({ expiresHours, building_Number: buildingPayload })
         });
+
         if (!resp.ok) {
           const txt = await resp.text().catch(()=> '');
           showError('Could not generate link. ' + (txt || ''), resp.status);
           return;
         }
+
         const data = await resp.json().catch(()=>({}));
         const baseUrl = window.location.origin + window.location.pathname;
         const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
         const url = data.url || data.oneTimeUrl || `${baseUrl}?token=${encodeURIComponent(data.token)}${wd}`;
+
         try { await navigator.clipboard.writeText(url); } catch {}
         alert('Discord link copied to clipboard:\n' + url);
       } catch (e) {
@@ -482,12 +520,21 @@
       }
     }
 
-    // QR modal wiring
-    (function qrWiring(){
-      const btnQR = document.getElementById('btnGenerateQR');
+    // Ready
+    (function onReady(cb){ if (document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', cb, {once:true}); } else { cb(); } })(() => {
+      // Admin buttons
       const btnLink = document.getElementById('btnGenerateLink');
       if (btnLink) btnLink.addEventListener('click', generateOneTimeLink);
 
+      const wdToggle = document.getElementById('workshopDayToggle');
+      if (wdToggle) {
+        try { wdToggle.checked = localStorage.getItem(WORKSHOP_DAY_KEY) === 'true'; } catch {}
+        wdToggle.addEventListener('change', () => {
+          try { localStorage.setItem(WORKSHOP_DAY_KEY, String(wdToggle.checked)); } catch {}
+        });
+      }
+
+      // QR modal
       const qrModal   = document.getElementById('qrModal');
       const qrCreate  = document.getElementById('qrCreate');
       const qrClose   = document.getElementById('qrClose');
@@ -501,9 +548,12 @@
       const qrInlineError = document.getElementById('qrInlineError');
 
       function openQrModal() {
-        if (isKiosk()) return;
-        if (selectedBuilding !== null && !isNaN(selectedBuilding)) qrBuildingInp.value = String(selectedBuilding);
-        else qrBuildingInp.value = '';
+        if (isKiosk()) return; // locked
+        if (selectedBuilding !== null && !isNaN(selectedBuilding)) {
+          qrBuildingInp.value = String(selectedBuilding);
+        } else {
+          qrBuildingInp.value = '';
+        }
         try { qrWorkshopDay.checked = (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true'); } catch {}
         if (qrImg) { qrImg.src = ''; qrImg.classList.add('hidden'); }
         qrCanvas.classList.remove('hidden');
@@ -512,9 +562,11 @@
         qrModal.classList.remove('hidden');
       }
       function closeQrModal() { qrModal.classList.add('hidden'); }
-      if (btnQR) btnQR.addEventListener('click', openQrModal);
 
-      qrModal?.querySelectorAll('.qr-quick').forEach(btn => {
+      if (document.getElementById('btnGenerateQR')) {
+        document.getElementById('btnGenerateQR').addEventListener('click', openQrModal);
+      }
+      qrModal.querySelectorAll('.qr-quick').forEach(btn => {
         btn.addEventListener('click', () => {
           const v = btn.getAttribute('data-building');
           qrBuildingInp.value = v;
@@ -522,12 +574,14 @@
         });
       });
 
-      qrBuildingInp?.addEventListener('input', () => {
-        if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
-      });
+      if (qrBuildingInp) {
+        qrBuildingInp.addEventListener('input', () => {
+          if (qrInlineError) { qrInlineError.textContent = ''; qrInlineError.classList.add('hidden'); }
+        });
+      }
 
       async function createQr() {
-        if (isKiosk()) return;
+        if (isKiosk()) return; // locked
         const bVal = qrBuildingInp.value.trim();
         const bNum = Number(bVal);
         if (bVal === '' || isNaN(bNum) || bNum < 0 || bNum > 990) {
@@ -541,7 +595,7 @@
           qrInlineError.classList.add('hidden');
         }
         try {
-          const resp = await fetch(`${qrSignEndpoint}?sign=1&b=${encodeURIComponent(String(bNum))}&wd=${document.getElementById('workshopDayToggle')?.checked ? 1 : 0}`, {
+          const resp = await fetch(`${qrSignEndpoint}?sign=1&b=${encodeURIComponent(String(bNum))}&wd=${qrWorkshopDay.checked ? 1 : 0}`, {
             method: 'GET',
             headers: { 'x-api-key': getSavedKey()[1] || '' }
           });
@@ -551,7 +605,7 @@
             return;
           }
           const data = await resp.json();
-          const url = data.url;
+          const url = data.url; // signed static URL
 
           qrLinkInp.value = url;
           const hasLib = !!(window.QRCode && QRCode.toCanvas);
@@ -577,20 +631,22 @@
           showError('Unexpected error while generating the QR.');
         }
       }
-      qrCreate?.addEventListener('click', createQr);
-      qrClose?.addEventListener('click', closeQrModal);
-      qrCopy?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {} });
-    })();
+      qrCreate.addEventListener('click', createQr);
+      qrClose.addEventListener('click', closeQrModal);
+      qrCopy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(qrLinkInp.value); } catch {}
+      });
+    });
 
     // Building selection helpers
     function selectBuilding(buildingNumber) {
-      if (isKiosk()) return;
+      if (isKiosk()) return; // locked
       selectedBuilding = buildingNumber;
       try { localStorage.setItem('selectedBuilding', buildingNumber); } catch {}
       showSurveyForm();
     }
     function selectCustomBuilding() {
-      if (isKiosk()) return;
+      if (isKiosk()) return; // locked
       const customInput = document.getElementById('customBuilding');
       const buildingNumber = parseInt(customInput.value);
       if (!customInput.value || isNaN(buildingNumber) || buildingNumber <= 100 || buildingNumber >= 500) {
@@ -602,14 +658,16 @@
     function handleEnterKey(event) { if (event.key === 'Enter') { selectCustomBuilding(); } }
 
     function showBuildingSelection() {
-      if (isKiosk()) return;
+      if (isKiosk()) return; // locked
       buildingSelectionPage.classList.remove('hidden');
       surveyPage.classList.add('hidden');
+      analyticsPage.classList.add('hidden');
       syncFabVisibility();
     }
     function showSurveyForm() {
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.remove('hidden');
+      analyticsPage.classList.add('hidden');
       const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
       const workshopYes = document.getElementById('workshop_yes');
       const workshopNo  = document.getElementById('workshop_no');
@@ -619,55 +677,139 @@
       }
       if (linkToken) { verifyOneTimeToken(); }
       syncFabVisibility();
-      fitSurveyCardToViewport(); // in case kiosk already active
     }
     window.selectBuilding = selectBuilding;
     window.selectCustomBuilding = selectCustomBuilding;
     window.handleEnterKey = handleEnterKey;
     window.showBuildingSelection = showBuildingSelection;
 
-    // Sidebar nav (Survey active; Analytics placeholder)
-    document.getElementById('surveyTab')?.addEventListener('click', (e)=>{ e.preventDefault(); if (isKiosk()) showSurveyForm(); else (selectedBuilding===null?showBuildingSelection():showSurveyForm()); });
-    document.getElementById('analyticsTab')?.addEventListener('click', (e)=>{ e.preventDefault(); alert('Analytics disabled on this build.'); });
-    document.getElementById('resetTab')?.addEventListener('click', (e)=>{
-      e.preventDefault();
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      try { localStorage.removeItem('selectedBuilding'); } catch {}
-      location.href = location.pathname;
-    });
+    // Sidebar & nav
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const openSidebarBtn = document.getElementById('openSidebar');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
+    const surveyTab = document.getElementById('surveyTab');
+    const analyticsTab = document.getElementById('analyticsTab');
+
+    function openSidebar() { if (isKiosk()) return; sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+    function closeSidebar() { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
+    if (openSidebarBtn)  openSidebarBtn.addEventListener('click', openSidebar);
+    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+    if (sidebarOverlay)  sidebarOverlay.addEventListener('click', closeSidebar);
+
+    function switchToSurvey(e) {
+      if (e) e.preventDefault();
+      if (isKiosk()) { showSurveyForm(); return; }
+      if (selectedBuilding === null) showBuildingSelection(); else showSurveyForm();
+      surveyTab.classList.add('border-r-4','border-red-500','bg-gray-50');
+      analyticsTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
+      closeSidebar();
+    }
+    function switchToAnalytics(e) {
+      if (e) e.preventDefault();
+      if (isKiosk()) return;
+      buildingSelectionPage.classList.add('hidden');
+      surveyPage.classList.add('hidden');
+      analyticsPage.classList.remove('hidden');
+      analyticsTab.classList.add('border-r-4','border-red-500','bg-gray-50');
+      surveyTab.classList.remove('border-r-4','border-red-500','bg-gray-50');
+      closeSidebar();
+      syncFabVisibility();
+    }
+    if (surveyTab)    surveyTab.addEventListener('click', switchToSurvey);
+    if (analyticsTab) analyticsTab.addEventListener('click', switchToAnalytics);
 
     // Error helpers
-    function showError(message) {
-      document.getElementById('errorTitle').textContent = "We couldn't submit your response";
-      document.querySelector('.error-message').textContent = typeof message === 'string' ? message : 'Please try again in a moment.';
+    function friendlyError(raw, status = 0, usingToken = false) {
+      const text = (typeof raw === 'string') ? raw : (raw?.message || '');
+      const l = (text || '').toLowerCase();
+      let title = "We couldn't submit your response";
+      let message = 'Please try again in a moment.';
+
+      const roleNow = (document.querySelector('input[name="role"]:checked')?.value || 'student');
+      if (l.includes('study number does not exist') || l.includes('student number does not exist')) {
+        if (roleNow === 'employee') { title = 'DTU username not found'; message = "We couldn't find that DTU username. Please enter your DTU credentials (letters only, e.g. 'manufer') and try again."; }
+        else { title = 'Student number not found'; message = "We couldn't find that student number. Please check the six digits after 's' on your DTU ID (e.g. s123456) and try again."; }
+      } else if (l.includes('invalid or used token') || l.includes('token expired') || (status === 401 && usingToken) || l.includes('link has expired')) {
+        title = "Oops, this link has expired"; message = 'This one-time link has already been used or expired. Please request a new link from your supporter.';
+      } else if (l.includes('unauthorized')) {
+        title = 'Not authorised'; message = 'Your session has expired. Please refresh and try again.';
+      } else if (status >= 500) {
+        title = 'Service temporarily unavailable'; message = 'We are experiencing a temporary problem. Please try again in a minute.';
+      } else if (status === 429) {
+        title = 'Too many attempts'; message = 'Please wait a moment and try again.';
+      } else if (text && text.trim()) { message = text; }
+      return { title, message };
+    }
+
+    function showError(input, status) {
+      const usingToken = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
+      const { title, message } = (typeof input === 'string')
+        ? friendlyError(input, status, usingToken)
+        : (input && typeof input === 'object') ? input : friendlyError('', status, usingToken);
+
+      const titleEl = document.getElementById('errorTitle');
+      if (titleEl) titleEl.textContent = title;
+      document.querySelector('.error-message').textContent = message;
+
+      let redirectOnErrorClose = false;
+      const combo = (title + ' ' + message).toLowerCase();
+      const isExpiredTokenError = usingToken && (
+        combo.includes('link has expired') ||
+        combo.includes('invalid or used token') ||
+        combo.includes('token expired')
+      );
+      const closeBtn = document.getElementById('closeErrorModal');
+      if (closeBtn) {
+        if (isExpiredTokenError) { redirectOnErrorClose = true; closeBtn.textContent = 'Go to Python Support'; }
+        else { closeBtn.textContent = 'Try Again'; }
+        closeBtn.onclick = () => {
+          document.getElementById('errorModal').classList.add('hidden');
+          if (redirectOnErrorClose && usingToken) { window.location.replace('https://pythonsupport.dtu.dk/'); }
+        };
+      }
+
       document.getElementById('errorModal').classList.remove('hidden');
     }
 
-    // Role toggle fix: clear/disable inactive field
+    // ===== Role toggle: clear & disable inactive input (bugfix) =====
     const form = document.getElementById("surveyForm");
+    const roleInputs      = form.querySelectorAll('input[name="role"]');
     const studentWrapper  = document.getElementById('studentWrapper');
     const usernameWrapper = document.getElementById('usernameWrapper');
     const studentNumInput = document.getElementById('student_number');
     const usernameInput   = document.getElementById('dtu_username');
 
-    form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', toggleRole));
+    roleInputs.forEach(radio => radio.addEventListener('change', toggleRole));
+
     function toggleRole() {
       const isStudent = form.role.value === 'student';
+
+      // Show/Hide groups
       studentWrapper.classList.toggle('hidden', !isStudent);
       usernameWrapper.classList.toggle('hidden',  isStudent);
+
+      // Required flags
       studentNumInput.required = isStudent;
       usernameInput.required   = !isStudent;
+
+      // Disable + clear inactive control so it CANNOT block submission
       if (isStudent) {
+        // activate student number
         studentNumInput.disabled = false;
-        usernameInput.disabled = true; usernameInput.value = ''; usernameInput.setCustomValidity('');
+        usernameInput.disabled = true;
+        usernameInput.value = '';
+        usernameInput.setCustomValidity('');
       } else {
+        // activate username
         usernameInput.disabled = false;
-        studentNumInput.disabled = true; studentNumInput.value = ''; studentNumInput.setCustomValidity('');
+        studentNumInput.disabled = true;
+        studentNumInput.value = '';
+        studentNumInput.setCustomValidity('');
       }
     }
-    toggleRole();
 
-    // Student number validation messages
+    // Student number validation hints
     function setStudentCustomValidation() {
       const isStudent = (form.role.value === 'student');
       if (!isStudent || studentNumInput.disabled) { studentNumInput.setCustomValidity(''); return; }
@@ -676,14 +818,17 @@
       else if (!/^\d{6}$/.test(v)) studentNumInput.setCustomValidity("Format: exactly 6 digits. Example: s123456. Don’t type the 's'—it's already filled in.");
       else         studentNumInput.setCustomValidity('');
     }
-    studentNumInput.addEventListener('input', () => { studentNumInput.setCustomValidity(''); });
-    studentNumInput.addEventListener('blur', setStudentCustomValidation);
-    studentNumInput.addEventListener('invalid', setStudentCustomValidation);
+    if (studentNumInput) {
+      studentNumInput.addEventListener('input', () => { studentNumInput.setCustomValidity(''); });
+      studentNumInput.addEventListener('blur', setStudentCustomValidation);
+      studentNumInput.addEventListener('invalid', setStudentCustomValidation);
+    }
+    toggleRole(); // initialize
 
-    // Submit
     const thankYouModal = document.getElementById("thankYouModal");
     const closeBtn = document.getElementById("closeModal");
     const submitButton = document.getElementById("submitButton");
+
     let redirectOnThankYouClose = false;
 
     form.addEventListener("submit", async (e) => {
@@ -693,6 +838,8 @@
       submitButton.classList.add('opacity-50', 'cursor-not-allowed');
 
       const isStudent = form.role.value === 'student';
+      const linkToken = new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token');
+
       const payload = {
         role: form.role.value,
         student_number: isStudent ? 's' + studentNumInput.value.trim() : null,
@@ -706,7 +853,7 @@
 
       try {
         const headers = { "Content-Type": "application/json" };
-        if (linkToken) headers["x-token"] = linkToken; else headers["x-api-key"] = getSavedKey()[1] || "";
+        if (linkToken) { headers["x-token"] = linkToken; } else { headers["x-api-key"] = getSavedKey()[1] || ""; }
         const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
 
         if (response.ok) {
@@ -720,25 +867,37 @@
           form.reset();
           form.role.value = 'student';
           toggleRole();
-          const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
-          document.getElementById('workshop_yes').checked = !!preferWD;
-          document.getElementById('workshop_no').checked  = !preferWD;
+          {
+            const preferWD = qpWD || (localStorage.getItem(WORKSHOP_DAY_KEY) === 'true');
+            const workshopYes = document.getElementById('workshop_yes');
+            const workshopNo  = document.getElementById('workshop_no');
+            if (workshopYes && workshopNo) {
+              workshopYes.checked = !!preferWD;
+              workshopNo.checked  = !preferWD;
+            }
+          }
           studentNumInput.value = '';
           studentNumInput.focus();
           document.activeElement?.blur();
           setTimeout(() => { thankYouModal.classList.add('hidden'); }, 3000);
         } else {
-          let msg = '';
+          let raw = '';
           try {
             const ct = (response.headers.get('Content-Type') || '').toLowerCase();
-            msg = ct.includes('application/json') ? (await response.json())?.message : (await response.text());
+            if (ct.includes('application/json')) {
+              const j = await response.json();
+              raw = j?.message || (typeof j === 'string' ? j : JSON.stringify(j));
+            } else {
+              const t = await response.text();
+              if (t && t.trim().length) raw = t.trim();
+            }
           } catch {}
-          showError(msg || 'An error occurred while submitting your response.');
+          showError(friendlyError(raw, response.status, !!linkToken), response.status);
           if (form.role.value === 'student') { studentNumInput.focus(); } else { usernameInput?.focus(); }
         }
       } catch (err) {
         console.error("Background submit failed:", err);
-        showError('A network error occurred. Please try again.');
+        showError('A network error occurred. Please check your connection and try again.');
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = 'Submit Survey';
@@ -746,16 +905,21 @@
       }
     });
 
+    // Thank-you close behavior
     closeBtn.addEventListener('click', () => {
-      if (redirectOnThankYouClose && linkToken) window.location.replace('https://pythonsupport.dtu.dk/');
-      else thankYouModal.classList.add('hidden');
+      const linkToken = new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token');
+      if (redirectOnThankYouClose && linkToken) {
+        window.location.replace('https://pythonsupport.dtu.dk/');
+      } else {
+        thankYouModal.classList.add('hidden');
+      }
     });
 
-    // ===== Tablet (kiosk) controls =====
+    // ===== Tablet (kiosk) entry/exit controls (no zoom, no scroll) =====
     const kioskEnterBtn = document.getElementById('kioskEnter');
     const kioskExitBtn  = document.getElementById('kioskExit');
     const backFab       = document.getElementById('backFab');
-    const KIOSK_KEY     = 'kioskMode';
+    const KIOSK_KEY = 'kioskMode';
 
     function isKiosk(){ try { return localStorage.getItem(KIOSK_KEY) === '1'; } catch { return false; } }
     function setKiosk(v){
@@ -769,42 +933,33 @@
     function setViewportLock(lock) {
       const vp = document.querySelector('meta[name="viewport"]');
       if (!vp) return;
-      if (lock) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-      else      vp.setAttribute('content','width=device-width, initial-scale=1.0');
-    }
-
-    function fitSurveyCardToViewport(){
-      if (!isKiosk()) return;
-      const card = document.getElementById('surveyCard');
-      if (!card) return;
-      // Reset transform to measure natural size
-      card.style.transform = 'none';
-      const padding = 16; // small breathing room
-      const vw = window.innerWidth - padding*2;
-      const vh = window.innerHeight - padding*2;
-      const rect = card.getBoundingClientRect();
-      const scale = Math.min(vw / Math.max(1,rect.width), vh / Math.max(1,rect.height), 1.35); // cap a bit above 1 for medium screens
-      card.style.transform = `scale(${Math.max(1, scale)})`;
-      window.scrollTo(0,0);
+      if (lock) {
+        vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      } else {
+        vp.setAttribute('content','width=device-width, initial-scale=1.0');
+      }
     }
 
     function applyKiosk(state){
       if(state){
         document.body.classList.add('kiosk-mode');
         setViewportLock(true);
+        // Best-effort orientation + fullscreen
         try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); } catch {}
         try { const el=document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{}); } catch {}
+        // Trap back navigation
         kioskHistoryTrap = true;
         try { history.pushState({kiosk:1}, '', location.href); } catch {}
         window.addEventListener('popstate', onPop);
+        // Keep top
         window.scrollTo(0,0);
-        fitSurveyCardToViewport();
       } else {
         document.body.classList.remove('kiosk-mode');
         setViewportLock(false);
         kioskHistoryTrap = false;
         window.removeEventListener('popstate', onPop);
         try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch {}
+        // Clear any transforms
         const card = document.getElementById('surveyCard');
         if (card) card.style.transform = '';
       }
@@ -812,10 +967,11 @@
     }
 
     function syncFabVisibility(){
-      const onSurvey = !document.getElementById('surveyPage').classList.contains('hidden');
+      const onSurvey = !surveyPage.classList.contains('hidden');
+      const tokenMode = !!(new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'));
       const kioskActive = isKiosk();
-      if (kioskEnterBtn) kioskEnterBtn.style.display = (!isVisitor && onSurvey && !kioskActive) ? '' : 'none';
-      if (backFab)       backFab.style.display       = (!isVisitor && onSurvey && !kioskActive) ? '' : 'none';
+      if (kioskEnterBtn) kioskEnterBtn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
+      if (backFab) backFab.style.display           = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
     }
 
     // Prevent scroll gestures in kiosk
@@ -823,42 +979,54 @@
     window.addEventListener('touchmove', blockScroll, {passive:false});
     window.addEventListener('wheel', blockScroll, {passive:false});
 
-    // Snap back to top after leaving an input
-    document.addEventListener('focusout', () => { if (isKiosk()) setTimeout(() => window.scrollTo(0,0), 50); });
+    // After leaving an input, snap back to top & re-lock
+    document.addEventListener('focusout', () => {
+      if (!isKiosk()) return;
+      setTimeout(() => { window.scrollTo(0,0); }, 50);
+    });
 
-    // Enter/Exit kiosk
-    kioskEnterBtn?.addEventListener('click', ()=> setKiosk(true));
+    // Enter kiosk
+    kioskEnterBtn.addEventListener('click', ()=> setKiosk(true));
 
+    // Exit kiosk: five taps in top-right
     let taps = 0, timer = null;
     function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
     function handleExitTap(){
       taps += 1;
       if (!timer) { timer = setTimeout(resetTapCounter, 1500); }
-      if (taps >= 5) { resetTapCounter(); setKiosk(false); }
+      if (taps >= 5) {
+        resetTapCounter();
+        setKiosk(false);
+      }
     }
-    kioskExitBtn?.addEventListener('click', handleExitTap, {passive:true});
-    kioskExitBtn?.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
+    kioskExitBtn.addEventListener('click', handleExitTap, {passive:true});
+    kioskExitBtn.addEventListener('touchstart', function(e){ e.preventDefault(); handleExitTap(); }, {passive:false});
 
-    // Back to selector
-    document.getElementById('backFab')?.addEventListener('click', (e)=>{ e.preventDefault(); showBuildingSelection(); });
+    // Lock behaviors in kiosk (keyboard/nav)
+    window.addEventListener('keydown', (e)=>{
+      if (!isKiosk()) return;
+      const tag = (e.target && e.target.tagName) || '';
+      const editable = tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable;
+      if (e.key === 'Backspace' && !editable) e.preventDefault();
+      const ctrlOrCmd = e.ctrlKey || e.metaKey;
+      if (e.key === 'F5' || (ctrlOrCmd && (e.key.toLowerCase() === 'r' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'n'))) e.preventDefault();
+      if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) e.preventDefault();
+      if (e.key === 'Escape') e.preventDefault();
+    });
+    window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) { e.preventDefault(); } });
 
-    // Workshop preference persistence
-    const wdToggle = document.getElementById('workshopDayToggle');
-    if (wdToggle) {
-      try { wdToggle.checked = localStorage.getItem(WORKSHOP_DAY_KEY) === 'true'; } catch {}
-      wdToggle.addEventListener('change', () => { try { localStorage.setItem(WORKSHOP_DAY_KEY, String(wdToggle.checked)); } catch {} });
-    }
+    // Back to selector (FAB, hidden in kiosk or token mode)
+    document.getElementById('backFab').addEventListener('click', (e)=>{
+      e.preventDefault();
+      showBuildingSelection();
+    });
 
-    // Initial page
-    if (linkToken) { showSurveyForm(); }
+    // Init page
+    if (hasOneTimeToken) { showSurveyForm(); }
     else if (selectedBuilding === null) { showBuildingSelection(); }
     else { showSurveyForm(); }
 
-    // Fit on orientation/resize while in kiosk
-    window.addEventListener('resize', fitSurveyCardToViewport);
-    window.addEventListener('orientationchange', ()=> setTimeout(fitSurveyCardToViewport, 100));
-
-    // Final FAB sync
+    // Final UI sync
     syncFabVisibility();
   </script>
 
