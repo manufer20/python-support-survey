@@ -43,6 +43,16 @@
 
     .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
     .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
+
+    /* === NEW: Widen the survey card for students to use the full space === */
+    .student-view #surveyCard {
+      max-width: 56rem; /* Equivalent to Tailwind's max-w-4xl */
+    }
+    @media (min-width: 1024px) {
+      .student-view #surveyCard {
+        max-width: 64rem; /* Equivalent to Tailwind's max-w-5xl */
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
@@ -395,7 +405,6 @@
     const qpBuilding  = urlParams.get('b');
     const qpWD        = urlParams.get('wd') === '1';
 
-    // === CHANGED: Define condition for hiding sidebar ===
     const tokenOrQr = !!linkToken || !!qpBuilding;
 
     if (qpBuilding) {
@@ -627,7 +636,6 @@
     const backSelectorTab = document.getElementById('backSelectorTab');
     const resetTab = document.getElementById('resetTab');
 
-    // === CHANGED: Updated openSidebar to include all restricted conditions ===
     function openSidebar() {
       if (isKiosk() || tokenOrQr) return;
       sidebar.classList.remove('-translate-x-full');
@@ -653,7 +661,7 @@
     }
     function switchToAnalytics(e) {
       if (e) e.preventDefault();
-      if (isKiosk()) return;
+      if (isKiosk() || tokenOrQr) return;
       buildingSelectionPage.classList.add('hidden');
       surveyPage.classList.add('hidden');
       analyticsPage.classList.remove('hidden');
@@ -668,12 +676,17 @@
     if (backSelectorTab) backSelectorTab.addEventListener('click', e => { e.preventDefault(); showBuildingSelection(); closeSidebar(); });
     if (resetTab) resetTab.addEventListener('click', e => { e.preventDefault(); location.href = location.pathname + '?reset=1'; });
 
-    // === NEW: Function to hide sidebar system in student-facing modes ===
-    function applySidebarVisibility() {
-      const shouldHide = tokenOrQr || isKiosk();
-      if (openSidebarBtn) openSidebarBtn.style.display = shouldHide ? 'none' : '';
-      if (sidebar) sidebar.style.display = shouldHide ? 'none' : '';
-      if (sidebarOverlay) sidebarOverlay.style.display = shouldHide ? 'none' : '';
+    function updateUiForViewMode() {
+      const isStudentMode = tokenOrQr || isKiosk();
+      document.body.classList.toggle('student-view', isStudentMode);
+      
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const openBtn = document.getElementById('openSidebar');
+
+      if (openBtn) openBtn.style.display = isStudentMode ? 'none' : '';
+      if (sidebar) sidebar.style.display = isStudentMode ? 'none' : '';
+      if (overlay) overlay.style.display = isStudentMode ? 'none' : '';
     }
 
     // Show/hide "Back to selector" only when not on selector page
@@ -898,8 +911,7 @@
         try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch {}
       }
       syncFabVisibility();
-      // === CHANGED: Call the new visibility function when kiosk mode changes ===
-      applySidebarVisibility();
+      updateUiForViewMode();
     }
     function syncFabVisibility(){
       const onSurvey = !surveyPage.classList.contains('hidden');
@@ -942,8 +954,7 @@
     else { showSurveyForm(); }
     syncFabVisibility();
     syncBackSelectorVisibility();
-    // === CHANGED: Call the new visibility function on page load ===
-    applySidebarVisibility();
+    updateUiForViewMode();
   </script>
 
   <button id="kioskEnter" class="fab" aria-label="Enter tablet mode" title="Enter tablet mode">Enter Tablet mode</button>
