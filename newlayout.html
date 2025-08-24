@@ -10,19 +10,20 @@
   <meta http-equiv="Content-Security-Policy"
         content="frame-src 'self' https://app.powerbi.com https://*.powerbi.com; child-src 'self' https://app.powerbi.com https://*.powerbi.com">
 
-  <!-- Kiosk UI (enter bottom-right, exit by 5 taps top-left) -->
+  <!-- Kiosk/Tablet UI -->
   <style>
-    /* --- Kiosk mode toggles --- */
+    /* --- Tablet (kiosk) mode toggles --- */
     .kiosk-entry{
       position:fixed; right:12px; bottom:12px;
-      width:44px; height:44px; border-radius:9999px;
-      background:rgba(0,0,0,.06); color:#111827;
+      min-width: 44px; height:44px; border-radius:9999px;
+      padding: 0 14px;
+      background:#000; color:#fff;
       font-weight:600; font-size:12px;
       display:flex; align-items:center; justify-content:center;
-      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
       z-index:60; cursor:pointer; user-select:none;
     }
-    .kiosk-entry:hover{ background:rgba(0,0,0,.10); }
+    .kiosk-entry:hover{ background:#111; }
     .kiosk-mode .kiosk-entry{ display:none; }
 
     /* Invisible exit hot-corner (only in kiosk mode) */
@@ -934,9 +935,9 @@
     // <button id="openSidebar">...</button> can be added to your header if needed.
   </script>
 
-  <!-- Kiosk entry/exit controls -->
-  <button id="kioskEnter" class="kiosk-entry" aria-label="Enter kiosk mode" title="Enter kiosk mode">K</button>
-  <button id="kioskExit" class="kiosk-exit" aria-label="Exit kiosk mode (tap 5 times)"></button>
+  <!-- Tablet (kiosk) entry/exit controls -->
+  <button id="kioskEnter" class="kiosk-entry" aria-label="Enter tablet mode" title="Enter tablet mode">Enter Tablet mode</button>
+  <button id="kioskExit" class="kiosk-exit" aria-label="Exit tablet mode (tap 5 times)"></button>
 
   <script>
     (function(){
@@ -945,22 +946,49 @@
       const enterBtn = document.getElementById('kioskEnter');
       const exitBtn  = document.getElementById('kioskExit');
 
+      // Detect if the current device is a tablet
+      function isTablet() {
+        const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+        const isIpad = /\bipad\b/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isAndroidTablet = /android/.test(ua) && !/mobile/.test(ua);
+        const hasTabletKeyword = /tablet/.test(ua);
+        const largeTouch = ('ontouchstart' in window) && Math.min(screen.width, screen.height) >= 768;
+        return isIpad || isAndroidTablet || hasTabletKeyword || largeTouch;
+      }
+
+      // Check if this is a one-time token session (Discord link or QR)
+      const params = new URLSearchParams(location.search);
+      const hasToken = !!(params.get('t') || params.get('token'));
+
       function apply(state){
         if(state){ body.classList.add('kiosk-mode'); }
         else { body.classList.remove('kiosk-mode'); }
       }
 
-      // Persisted state across reloads
-      apply(localStorage.getItem(KEY) === '1');
+      // Only allow the entry button on TABLETS and when NOT a token link.
+      const allowEntry = isTablet() && !hasToken;
 
+      // If a token link is opened and kiosk persisted, disable it
+      if (!allowEntry && localStorage.getItem(KEY) === '1') {
+        localStorage.removeItem(KEY);
+        apply(false);
+      }
+
+      // Persisted state across reloads (only if allowed)
+      if (allowEntry && localStorage.getItem(KEY) === '1') {
+        apply(true);
+      }
+
+      // Show/hide the entry button depending on allowance
       if (enterBtn) {
+        enterBtn.style.display = allowEntry ? '' : 'none';
         enterBtn.addEventListener('click', () => {
           localStorage.setItem(KEY, '1');
           apply(true);
         });
       }
 
-      // Five taps in top-left to exit kiosk
+      // Five taps in top-left to exit tablet mode
       let taps = 0, timer = null;
       function resetTapCounter(){ taps = 0; if (timer) { clearTimeout(timer); timer = null; } }
       function handleExitTap(){
