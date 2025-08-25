@@ -3,32 +3,22 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
-// Smooth center helper that temporarily unlocks the main wrapper to allow scrolling in kiosk mode
-function centerInKiosk(el, delay = 120) {
-  if (!el) return;
+export async function verifyOneTimeToken() {
+  if (!linkToken) return true;
   try {
-    if (!inKiosk || typeof inKiosk !== 'function' || !inKiosk()) return;
-  } catch { return; }
-
-  const wrapper = document.getElementById('mainWrapper');
-  const restore = [];
-
-  if (wrapper) {
-    const prevOverflow = wrapper.style.overflow;
-    wrapper.style.overflow = 'auto';         // temporarily allow scrolling
-    restore.push(() => { wrapper.style.overflow = prevOverflow || ''; });
-  }
-
-  const doCenter = () => {
-    try { el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {}
-  };
-
-  // One pass soon after focus, and one a bit later after the keyboard finishes animating
-  setTimeout(doCenter, delay);
-  setTimeout(doCenter, delay + 250);
-
-  // Restore overflow after everything settles
-  setTimeout(() => { restore.forEach(fn => fn()); }, delay + 700);
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-token': linkToken },
+      body: JSON.stringify({ ping: true })
+    });
+    if (!resp.ok) {
+      showError('Oops, this link has expired. Please request a new one-time link from your supporter.', resp.status);
+      document.querySelectorAll('#surveyForm input, #surveyForm select, #surveyForm textarea, #surveyForm button')
+        .forEach(el => { if (el.id !== 'closeErrorModal') el.disabled = true; });
+      return false;
+    }
+    return true;
+  } catch { return true; }
 }
 
 function loadCourses() {
@@ -144,10 +134,14 @@ export function wireSurveyForm(){
     });
   }
 
-  // Smoothly center the active input in kiosk mode (uses helper that unlocks wrapper)
+  // Smoothly center the active input in kiosk mode
   [studentNumInput, usernameInput].forEach((inp) => {
     if (!inp) return;
-    inp.addEventListener('focus', () => centerInKiosk(inp, 120));
+    inp.addEventListener('focus', () => {
+      if (inKiosk && typeof inKiosk === 'function' && inKiosk()) {
+        setTimeout(() => { try { inp.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 120);
+      }
+    });
   });
 
   // Tap anywhere outside inputs to dismiss the keyboard (tablet mode only)
@@ -282,17 +276,20 @@ export function wireSurveyForm(){
 
   // Re-center and keep the caret editable after choosing an option
   courseInput.addEventListener('change', () => {
-    if (!inKiosk || typeof inKiosk !== 'function' || !inKiosk()) return;
+    if (!document.body.classList.contains('kiosk-mode')) return;
+    // Keep focus & put caret at the end so it’s easy to edit
     courseInput.focus({ preventScroll: true });
     const len = courseInput.value.length;
     try { courseInput.setSelectionRange(len, len); } catch {}
-    centerInKiosk(courseInput, 80);
+    // Center it (again) in case the keyboard changed layout
+    setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 50);
   });
 
   // Also center on plain focus
   courseInput.addEventListener('focus', () => {
-    if (!inKiosk || typeof inKiosk !== 'function' || !inKiosk()) return;
-    centerInKiosk(courseInput, 150);
+    if (document.body.classList.contains('kiosk-mode')) {
+      setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 150);
+    }
   });
 })();
 
