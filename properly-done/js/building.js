@@ -1,75 +1,225 @@
-/* ===== Centering + base type scale (app-wide) ===== */
-:root{
-  --base-font: 17px;          /* slightly larger than default */
-  --card-max: 920px;          /* max width for cards */
-  --page-pad: 24px;
-}
-html{ font-size: var(--base-font); }
-body{ min-height:100vh; }
+import { endpoint, tokenEndpoint, qrSignEndpoint, STORAGE, state, saveSelectedBuilding, qpWD, linkToken } from './config.js';
+import { getSavedKey } from './auth.js';
+import { showError } from './errors.js';
+import { isKiosk, syncFabVisibility } from './kiosk.js';
 
-/* Center the three top-level containers and constrain inner width */
-#buildingSelectionContainer,
-#surveyContainer,
-#analyticsContainer{
-  display:flex;
-  align-items:flex-start;           /* align content near top but centered horizontally */
-  justify-content:center;
-  padding: var(--page-pad);
-}
-#buildingSelectionContainer &gt; *:first-child,
-#surveyContainer &gt; *:first-child,
-#analyticsContainer &gt; *:first-child{
-  width:min(96vw, var(--card-max));
-  margin-inline:auto;
-}
+const overlay = () => document.getElementById('sidebarOverlay');
+const sidebar = () => document.getElementById('sidebar');
+const openBtn  = () => document.getElementById('openSidebar');
 
-/* Comfortable headings and controls */
-h1,h2{ font-weight:700; line-height:1.25; }
-h1{ font-size: clamp(1.6rem, 1.1rem + 1.2vw, 2.1rem); }
-h2{ font-size: clamp(1.3rem, 1rem + 0.9vw, 1.75rem); }
+export function openSidebar(){ if (!isKiosk()) { sidebar().classList.remove('-translate-x-full'); overlay().classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }}
+export function closeSidebar(){ sidebar().classList.add('-translate-x-full'); overlay().classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
 
-label, .label{ font-size:1.0625rem; }
-input, select, textarea, button{ font-size:1rem; }
+export function showBuildingSelection(){
+  if (isKiosk()) return;
 
-/* ===== Kiosk (tablet) scale + card look ===== */
-html.kiosk, body.kiosk{
-  /* 15% type scale up while keeping layout responsive */
-  font-size: calc(var(--base-font, 16px) * 1.15);
+  // show containers
+  document.getElementById('buildingSelectionContainer').classList.remove('hidden');
+  document.getElementById('surveyContainer').classList.add('hidden');
+  document.getElementById('analyticsContainer').classList.add('hidden');
+
+  // also toggle inner pages (partials)
+  document.getElementById('buildingSelectionPage')?.classList.remove('hidden');
+  document.getElementById('surveyPage')?.classList.add('hidden');
+  document.getElementById('analyticsPage')?.classList.add('hidden');
+
+  syncBackSelectorVisibility();
+  syncFabVisibility();
 }
 
-body.kiosk{
-  /* keep the page centered and fixed */
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  width: 100vw;
-  height: 100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background: #f7f7f8;
-  padding: 0 12px;
+export function showSurveyForm(){
+  // show containers
+  document.getElementById('buildingSelectionContainer').classList.add('hidden');
+  document.getElementById('surveyContainer').classList.remove('hidden');
+  document.getElementById('analyticsContainer').classList.add('hidden');
+
+  // also toggle inner pages (partials)
+  document.getElementById('buildingSelectionPage')?.classList.add('hidden');
+  document.getElementById('surveyPage')?.classList.remove('hidden');
+  document.getElementById('analyticsPage')?.classList.add('hidden');
+
+  // keep the workshop preset logic
+  const preferWD = (localStorage.getItem('workshopDay') === 'true');
+  const yes = document.getElementById('workshop_yes');
+  const no  = document.getElementById('workshop_no');
+  if (yes && no) { yes.checked = !!preferWD; no.checked = !preferWD; }
+
+  syncBackSelectorVisibility();
+  syncFabVisibility();
 }
 
-/* keep the survey "card" appearance in kiosk mode */
-body.kiosk #surveyContainer &gt; *:first-child{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.08);
-  padding: 24px;
-  width:min(96vw, var(--card-max, 920px));
-  margin:0 auto;
+export function switchToAnalytics(e){
+  if (e) e.preventDefault();
+  if (isKiosk() || (new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'))) return;
+
+  // show containers
+  document.getElementById('buildingSelectionContainer').classList.add('hidden');
+  document.getElementById('surveyContainer').classList.add('hidden');
+  document.getElementById('analyticsContainer').classList.remove('hidden');
+
+  // also toggle inner pages (partials)
+  document.getElementById('buildingSelectionPage')?.classList.add('hidden');
+  document.getElementById('surveyPage')?.classList.add('hidden');
+  document.getElementById('analyticsPage')?.classList.remove('hidden');
+
+  closeSidebar();
+  syncBackSelectorVisibility();
+  syncFabVisibility();
 }
 
-/* make headings a touch larger in kiosk */
-body.kiosk h1{ font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.4rem); }
-body.kiosk h2{ font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2rem); }
+export function switchToSurvey(e){
+  if (e) e.preventDefault();
+  if (isKiosk()) { showSurveyForm(); return; }
+  if (state.selectedBuilding === null) showBuildingSelection(); else showSurveyForm();
+  closeSidebar();
+}
 
-/* ===== Survey page tweaks for better centering ===== */
-#surveyContainer{ scroll-behavior:smooth; }
-#surveyContainer form{ max-width: 100%; }
-#surveyContainer .actions button{ font-size:1.0625rem; }
+export function selectBuilding(b){ if (isKiosk()) return; saveSelectedBuilding(b); showSurveyForm(); }
+export function selectCustomBuilding(){
+  if (isKiosk()) return;
+  const input = document.getElementById('customBuilding');
+  const n = parseInt(input.value, 10);
+  if (!input.value || isNaN(n) || n <= 100 || n >= 500) return showError('Please enter a valid building number (101-499).');
+  selectBuilding(n);
+}
+export function handleEnterKey(e){ if (e.key === 'Enter') selectCustomBuilding(); }
 
-/* Bigger helper text without breaking mobile */
-.help, .hint{ font-size:0.95rem; color:#6b7280; }
+// Admin controls
+function wireWorkshopToggle(){
+  const t = document.getElementById('workshopDayToggle');
+  if (!t) return;
+  try { t.checked = localStorage.getItem(STORAGE.WORKSHOP) === 'true'; } catch {}
+  t.addEventListener('change', ()=> { try { localStorage.setItem(STORAGE.WORKSHOP, String(t.checked)); } catch {} });
+}
+
+async function generateOneTimeLink() {
+  if (isKiosk()) return;
+  try {
+    const resp = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': getSavedKey()[1] || '' },
+      body: JSON.stringify({ expiresHours: 24, building_Number: 'Online' })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text().catch(()=> '');
+      showError('Could not generate link. ' + (txt || ''), resp.status);
+      return;
+    }
+    const data = await resp.json().catch(()=>({}));
+    const baseUrl = window.location.origin + window.location.pathname;
+    const wd = (document.getElementById('workshopDayToggle')?.checked) ? '&wd=1' : '';
+    const url = data.url || data.oneTimeUrl || `${baseUrl}?token=${encodeURIComponent(data.token)}${wd}`;
+    try { await navigator.clipboard.writeText(url); } catch {}
+    alert('Discord link copied to clipboard:\n' + url);
+  } catch (e) {
+    console.error(e);
+    showError('Unexpected error while generating the link.');
+  }
+}
+
+function wireQRModal(){
+  const modal = document.getElementById('qrModal');
+  const qrCreate  = document.getElementById('qrCreate');
+  const qrClose   = document.getElementById('qrClose');
+  const qrCopy    = document.getElementById('qrCopy');
+  const qrCanvas  = document.getElementById('qrCanvas');
+  const qrImg     = document.getElementById('qrImg');
+  const qrLinkInp = document.getElementById('qrLink');
+  const qrResult  = document.getElementById('qrResult');
+  const qrBuildingInp = document.getElementById('qrBuilding');
+  const qrWD = document.getElementById('qrWorkshopDay');
+  const inlineErr = document.getElementById('qrInlineError');
+
+  function open() {
+    if (isKiosk()) return;
+    qrBuildingInp.value = (state.selectedBuilding ?? '').toString();
+    try { qrWD.checked = (localStorage.getItem(STORAGE.WORKSHOP) === 'true'); } catch {}
+    if (qrImg) { qrImg.src=''; qrImg.classList.add('hidden'); }
+    qrCanvas.classList.remove('hidden'); qrResult.classList.add('hidden');
+    if (inlineErr) { inlineErr.textContent=''; inlineErr.classList.add('hidden'); }
+    modal.classList.remove('hidden');
+  }
+  function close(){ modal.classList.add('hidden'); }
+
+  document.getElementById('btnGenerateQR')?.addEventListener('click', open);
+  modal?.querySelectorAll('.qr-quick').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      qrBuildingInp.value = btn.getAttribute('data-building');
+      inlineErr.classList.add('hidden');
+    });
+  });
+
+  qrBuildingInp?.addEventListener('input', ()=> inlineErr.classList.add('hidden'));
+
+  async function create(){
+    if (isKiosk()) return;
+    const val = qrBuildingInp.value.trim(); const num = Number(val);
+    if (val==='' || isNaN(num) || num<0 || num>990){
+      inlineErr.textContent='Please enter a valid building between 000 and 990 or use a quick option.';
+      inlineErr.classList.remove('hidden'); return;
+    }
+    const resp = await fetch(`${qrSignEndpoint}?sign=1&b=${encodeURIComponent(String(num))}&wd=${qrWD.checked ? 1 : 0}`, {
+      method:'GET', headers:{ 'x-api-key': getSavedKey()[1] || '' }
+    });
+    if (!resp.ok){ const txt = await resp.text().catch(()=> ''); return showError('Could not create static QR. ' + (txt||''), resp.status); }
+    const { url } = await resp.json();
+    qrLinkInp.value = url;
+    if (window.QRCode?.toCanvas){
+      const ctx = qrCanvas.getContext('2d'); ctx.clearRect(0,0,qrCanvas.width,qrCanvas.height);
+      await QRCode.toCanvas(qrCanvas, url, { width: 280, margin: 2 });
+      qrCanvas.classList.remove('hidden'); qrImg.classList.add('hidden');
+    } else {
+      const e = encodeURIComponent(url);
+      qrCanvas.classList.add('hidden'); qrImg.classList.remove('hidden');
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${e}`;
+    }
+    qrResult.classList.remove('hidden');
+  }
+  qrCreate?.addEventListener('click', create);
+  qrClose?.addEventListener('click', close);
+  qrCopy?.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(qrLinkInp.value);}catch{} });
+}
+
+export function applySidebarVisibility(){
+  const hide = isKiosk() || !!linkToken || !!(new URLSearchParams(location.search).get('b'));
+  if (sidebar()) {
+    if (hide){ sidebar().hidden=true; sidebar().style.display='none'; sidebar().setAttribute('aria-hidden','true'); sidebar().setAttribute('inert',''); }
+    else { sidebar().hidden=false; sidebar().style.display=''; sidebar().removeAttribute('aria-hidden'); sidebar().removeAttribute('inert'); }
+  }
+  document.getElementById('openSidebar').style.display = hide ? 'none' : '';
+  overlay().classList.add('hidden'); overlay().style.display='none';
+}
+
+export function syncBackSelectorVisibility(){
+  const link = document.getElementById('backSelectorTab');
+  if (!link) return;
+  const onSelector = !document.getElementById('buildingSelectionContainer').classList.contains('hidden');
+  link.style.display = onSelector ? 'none' : '';
+}
+
+export function wireBuildingPage(){
+  // global functions (for inline onclick in partial)
+  window.selectBuilding = selectBuilding;
+  window.selectCustomBuilding = selectCustomBuilding;
+  window.handleEnterKey = handleEnterKey;
+  window.showBuildingSelection = showBuildingSelection;
+
+  document.getElementById('btnGenerateLink')?.addEventListener('click', generateOneTimeLink);
+  wireWorkshopToggle();
+  wireQRModal();
+
+  // sidebar events
+  document.getElementById('openSidebar')?.addEventListener('click', openSidebar);
+  document.getElementById('closeSidebar')?.addEventListener('click', closeSidebar);
+  document.getElementById('sidebarOverlay')?.addEventListener('click', closeSidebar);
+
+  // tabs
+  document.getElementById('surveyTab')?.addEventListener('click', switchToSurvey);
+  document.getElementById('analyticsTab')?.addEventListener('click', switchToAnalytics);
+  document.getElementById('backSelectorTab')?.addEventListener('click', e => { e.preventDefault(); showBuildingSelection(); closeSidebar(); });
+  document.getElementById('resetTab')?.addEventListener('click', e => { e.preventDefault(); location.href = location.pathname + '?reset=1'; });
+
+  applySidebarVisibility();
+  syncBackSelectorVisibility();
+  syncFabVisibility();
+}
