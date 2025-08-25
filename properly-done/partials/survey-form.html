@@ -70,13 +70,6 @@
     min-height: 208px; /* 30% more than the previous 160px */
   }
 
-  /* Kiosk floating OK button */
-  #kioskOk { display: none; }
-  .kiosk-mode #kioskOk:not(.hidden) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
@@ -163,13 +156,6 @@
       </button>
     </form>
 
-    <!-- Floating OK button for tablet (kiosk) mode -->
-    <button id="kioskOk"
-            type="button"
-            class="hidden fixed z-50 rounded-full px-6 py-4 font-semibold shadow-lg bg-red-600 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            style="right: 1rem; bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);">
-      OK
-    </button>
     <!-- Extra bottom space so focused inputs aren’t obscured by the on-screen keyboard in tablet mode -->
     <div class="kiosk-pad"></div>
   </div>

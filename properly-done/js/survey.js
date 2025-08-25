@@ -223,8 +223,6 @@ export function wireSurveyForm(){
   form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', toggleRole));
   toggleRole();
 
-  // If the floating kiosk OK button exists, wire its behavior
-  try { wireKioskOk && wireKioskOk(); } catch {}
 
   function setStudentCustomValidation() {
     const isStudent = (form.role.value === 'student');
@@ -339,66 +337,3 @@ export function wireSurveyForm(){
 function inKiosk() {
   return document.body.classList.contains('kiosk-mode');
 }
-
-function wireKioskOk() {
-  const ok = document.getElementById('kioskOk');
-  if (!ok) return;
-
-  const ids = ['student_number', 'dtu_username', 'course_number'];
-  const inputs = ids.map(id => document.getElementById(id)).filter(Boolean);
-
-  const show = () => { if (inKiosk()) ok.classList.remove('hidden'); };
-  const hide = () => ok.classList.add('hidden');
-
-  // Show when focusing any target input; hide on blur if nothing else is focused
-  inputs.forEach(inp => {
-    inp.addEventListener('focus', show);
-    inp.addEventListener('blur', () => {
-      // Give click time to fire when moving focus to the OK button
-      setTimeout(() => {
-        const active = document.activeElement;
-        if (!inputs.includes(active) && active !== ok) hide();
-      }, 50);
-    });
-    // Enter = OK
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && inKiosk()) {
-        e.preventDefault();
-        ok.click();
-      }
-    });
-  });
-
-  // Move forward based on what was being edited
-  function goNextFrom(id) {
-    if (id === 'student_number' || id === 'dtu_username') {
-      const firstSmile = document.querySelector('input[name="satisfaction"]');
-      if (firstSmile) {
-        firstSmile.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        // Don’t auto-select—just make the group reachable
-        try { firstSmile.focus({ preventScroll: true }); } catch {}
-      }
-      return;
-    }
-    if (id === 'course_number') {
-      const submit = document.getElementById('submitButton');
-      if (submit) {
-        submit.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        try { submit.focus({ preventScroll: true }); } catch {}
-      }
-    }
-  }
-
-  ok.addEventListener('click', () => {
-    // Which input are we confirming?
-    const active = document.activeElement;
-    const wasOneOfOurs = inputs.includes(active);
-    if (wasOneOfOurs) {
-      const id = active.id;
-      active.blur();                 // accept the value
-      goNextFrom(id);                // and move to next section
-    }
-    hide();
-  });
-}
-// 
