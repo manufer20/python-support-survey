@@ -1,15 +1,3 @@
-<style>
-/* ── Smaller survey ONLY before Tablet mode (supporter flow) ───────────── */
-/* Applies when you're NOT in student-flow (i.e., not QR/Discord/kiosk).  */
-body:not(.student-flow) #surveyPage {
-  padding: clamp(16px, 4vh, 32px);
-}
-body:not(.student-flow) #surveyCard {
-  max-width: 36rem;       /* ~576px — adjust to taste (34–38rem) */
-  margin: 4vh auto;       /* centered vertically & horizontally */
-  font-size: 0.95rem;     /* slightly smaller text like the old look */
-}
-</style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
     <div class="flex items-center justify-center mb-6">
