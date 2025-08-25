@@ -30,6 +30,19 @@
     box-shadow: 0 10px 25px rgba(17,24,39,.12) !important;
     padding: 2rem 2.5rem !important; /* p-8 md:p-10 feel */
   }
+  /* Kiosk — +20% typography scale */
+  body.kiosk-mode #surveyCard { font-size: 1.2rem; }
+  body.kiosk-mode #surveyCard h2 { font-size: 2.4rem !important; line-height: 1.2; }
+  body.kiosk-mode #surveyCard .text-lg { font-size: 1.35rem !important; }
+  body.kiosk-mode #surveyCard .md\:text-xl { font-size: 1.5rem !important; }
+  body.kiosk-mode #surveyCard .form-radio { width: 1.5rem; height: 1.5rem; }
+  body.kiosk-mode #surveyCard .prefix-s { font-size: 1.2rem !important; padding-left: 1rem; padding-right: 1rem; }
+
+  /* Align "Attended workshop?" inline with Yes/No and right-aligned on wider screens */
+  @media (min-width: 640px) {
+    #surveyPage #roleWorkshopGroup fieldset { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
+    #surveyPage #roleWorkshopGroup fieldset legend { margin: 0; }
+  }
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
