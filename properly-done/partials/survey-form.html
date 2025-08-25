@@ -39,6 +39,15 @@
   body.kiosk-mode #surveyCard .prefix-s { font-size: 1.2rem !important; padding-left: 1rem; padding-right: 1rem; }
   body.kiosk-mode #surveyPage #roleWorkshopGroup .wk-inline > span { white-space: nowrap; }
 
+  /* In kiosk mode, allow controlled vertical scrolling inside the main wrapper so
+     programmatic centering (scrollIntoView) can work for focused inputs like Course Number.
+     Manual gesture scrolling is still blocked by JS (touchmove/wheel), so students can't pan away. */
+  body.kiosk-mode #mainWrapper {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scroll-behavior: smooth;
+  }
+
   /* Align "Attended workshop?" inline with Yes/No and flush to the right on ≥sm */
   @media (min-width: 640px) {
     #surveyPage #roleWorkshopGroup .wk-inline {
