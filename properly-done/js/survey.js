@@ -173,3 +173,26 @@ export function wireSurveyForm(){
     else thankYou.classList.add('hidden');
   });
 }
+
+(function () {
+  const courseInput = document.getElementById('course_number');
+  if (!courseInput) return;
+
+  // Re-center and keep the caret editable after choosing an option
+  courseInput.addEventListener('change', () => {
+    if (!document.body.classList.contains('kiosk-mode')) return;
+    // Keep focus & put caret at the end so it’s easy to edit
+    courseInput.focus({ preventScroll: true });
+    const len = courseInput.value.length;
+    try { courseInput.setSelectionRange(len, len); } catch {}
+    // Center it (again) in case the keyboard changed layout
+    setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 50);
+  });
+
+  // Also center on plain focus
+  courseInput.addEventListener('focus', () => {
+    if (document.body.classList.contains('kiosk-mode')) {
+      setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 150);
+    }
+  });
+})();
