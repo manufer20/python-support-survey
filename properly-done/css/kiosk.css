@@ -37,7 +37,7 @@ body.kiosk-mode.student-flow #surveyPage {
 body.kiosk-mode #surveyCard,
 body.kiosk-mode.student-flow #surveyCard {
   /* Make the survey wide in tablet mode (≈ max-w-6xl) */
-  max-width: min(96vw, 72rem) !important;
+  max-width: 72rem !important;
   width: 100% !important;
   margin: 1rem auto !important;
 
@@ -47,73 +47,4 @@ body.kiosk-mode.student-flow #surveyCard {
 
   /* Override any student-flow full-height flattening */
   min-height: auto !important;
-}
-
-/* --- Kiosk (Tablet) typography & spacing to match building selector --- */
-/* Base text size & padding inside the survey card in kiosk */
-body.kiosk-mode #surveyCard,
-body.kiosk-mode.student-flow #surveyCard {
-  padding: 2rem !important;               /* ≈ p-8 */
-  font-size: 1.0625rem;                   /* ~17px: between base and md */
-  line-height: 1.6;
-}
-@media (min-width: 768px) {
-  body.kiosk-mode #surveyCard,
-  body.kiosk-mode.student-flow #surveyCard {
-    padding: 2.5rem !important;           /* ≈ md:p-10 */
-    font-size: 1.125rem;                  /* 18px: like text-lg */
-  }
-}
-
-/* Bigger survey title in kiosk (like building selector's 3xl) */
-body.kiosk-mode #surveyPage h2,
-body.kiosk-mode.student-flow #surveyPage h2 {
-  font-size: 1.875rem !important;         /* text-3xl */
-  line-height: 2.25rem !important;
-}
-
-/* Make the satisfaction faces bigger in kiosk */
-body.kiosk-mode #surveyPage img[alt^="Satisfaction level"],
-body.kiosk-mode.student-flow #surveyPage img[alt^="Satisfaction level"] {
-  width: 3rem !important;                 /* 48px */
-  height: 3rem !important;
-}
-
-/* Make radios easier to tap in kiosk */
-body.kiosk-mode #surveyPage input[type="radio"],
-body.kiosk-mode.student-flow #surveyPage input[type="radio"] {
-  transform: scale(1.2);
-  transform-origin: center;
-}
-
-/* Slightly larger gaps in the satisfaction grid (keeps other grids mostly as-is) */
-body.kiosk-mode #surveyPage .place-items-center,
-body.kiosk-mode.student-flow #surveyPage .place-items-center {
-  gap: 1rem !important;                   /* ≈ sm:gap-4 */
-}
-
-/* Inputs bigger / more padding in kiosk */
-body.kiosk-mode #surveyPage input[type="text"],
-body.kiosk-mode #surveyPage input[type="number"],
-body.kiosk-mode #surveyPage input[type="password"],
-body.kiosk-mode #surveyPage input[type="email"],
-body.kiosk-mode #surveyPage select,
-body.kiosk-mode #surveyPage textarea,
-body.kiosk-mode.student-flow #surveyPage input[type="text"],
-body.kiosk-mode.student-flow #surveyPage input[type="number"],
-body.kiosk-mode.student-flow #surveyPage input[type="password"],
-body.kiosk-mode.student-flow #surveyPage input[type="email"],
-body.kiosk-mode.student-flow #surveyPage select,
-body.kiosk-mode.student-flow #surveyPage textarea {
-  padding: 0.875rem 1rem !important;      /* ~py-3 px-4 */
-  font-size: inherit !important;
-  border-radius: 0.5rem !important;       /* rounded */
-}
-
-/* Submit button larger in kiosk */
-body.kiosk-mode #surveyPage #submitButton,
-body.kiosk-mode.student-flow #surveyPage #submitButton {
-  padding: 0.875rem 1.5rem !important;    /* ~py-3.5 px-6 */
-  font-size: 1.0625rem !important;
-  border-radius: 0.75rem !important;      /* rounded-lg */
 }
