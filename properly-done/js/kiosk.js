@@ -57,9 +57,6 @@ export function wireKiosk() {
     if (e.key === 'Escape') e.preventDefault();
   });
   window.addEventListener('contextmenu', (e)=>{ if (isKiosk()) e.preventDefault(); });
-  window.addEventListener('touchmove', (e)=>{ if (isKiosk()) e.preventDefault(); }, {passive:false});
-  window.addEventListener('wheel', (e)=>{ if (isKiosk()) e.preventDefault(); }, {passive:false});
-  document.addEventListener('focusout', () => { if (isKiosk()) { setTimeout(() => { window.scrollTo(0,0); }, 50); } });
 
   // leave kiosk if fullscreen gets closed via ESC (prevents freeze)
   function fsChange(){ if (isKiosk() && !document.fullscreenElement) { setKiosk(false); } }

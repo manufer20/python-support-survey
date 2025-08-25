@@ -53,6 +53,23 @@
     }
   }
 
+  /* Tablet: allow inner scrolling and reserve space for keyboard */
+  body.kiosk-mode #surveyPage { 
+    overflow: auto !important; 
+    -webkit-overflow-scrolling: touch; 
+    overscroll-behavior: contain; 
+  }
+  body.kiosk-mode #surveyPage :is(input, select, textarea) { 
+    scroll-margin-top: 12vh; /* ensure focused field centers above keyboard */
+  }
+  /* Spacer shown only in kiosk to prevent keyboard covering bottom controls */
+  .kiosk-pad { display: none; }
+  .kiosk-mode .kiosk-pad { 
+    display: block; 
+    height: 22vh; 
+    min-height: 160px; 
+  }
+
   /* Kiosk floating OK button */
   #kioskOk { display: none; }
   .kiosk-mode #kioskOk:not(.hidden) {
@@ -152,5 +169,7 @@
             style="right: 1rem; bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);">
       OK
     </button>
+    <!-- Extra bottom space so focused inputs aren’t obscured by the on-screen keyboard in tablet mode -->
+    <div class="kiosk-pad"></div>
   </div>
 </div>
