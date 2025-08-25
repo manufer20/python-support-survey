@@ -12,33 +12,58 @@ export function closeSidebar(){ sidebar().classList.add('-translate-x-full'); ov
 
 export function showBuildingSelection(){
   if (isKiosk()) return;
+
+  // show containers
   document.getElementById('buildingSelectionContainer').classList.remove('hidden');
   document.getElementById('surveyContainer').classList.add('hidden');
   document.getElementById('analyticsContainer').classList.add('hidden');
+
+  // also toggle inner pages (partials)
+  document.getElementById('buildingSelectionPage')?.classList.remove('hidden');
+  document.getElementById('surveyPage')?.classList.add('hidden');
+  document.getElementById('analyticsPage')?.classList.add('hidden');
+
   syncBackSelectorVisibility();
 }
+
 export function showSurveyForm(){
+  // show containers
   document.getElementById('buildingSelectionContainer').classList.add('hidden');
   document.getElementById('surveyContainer').classList.remove('hidden');
   document.getElementById('analyticsContainer').classList.add('hidden');
 
-  const preferWD = qpWD || (localStorage.getItem(STORAGE.WORKSHOP) === 'true');
-  document.getElementById('workshop_yes')?.closest('form') && (
-    (document.getElementById('workshop_yes').checked = !!preferWD),
-    (document.getElementById('workshop_no').checked  = !preferWD)
-  );
+  // also toggle inner pages (partials)
+  document.getElementById('buildingSelectionPage')?.classList.add('hidden');
+  document.getElementById('surveyPage')?.classList.remove('hidden');
+  document.getElementById('analyticsPage')?.classList.add('hidden');
+
+  // keep the workshop preset logic
+  const preferWD = (localStorage.getItem('workshopDay') === 'true');
+  const yes = document.getElementById('workshop_yes');
+  const no  = document.getElementById('workshop_no');
+  if (yes && no) { yes.checked = !!preferWD; no.checked = !preferWD; }
+
   syncBackSelectorVisibility();
 }
 
 export function switchToAnalytics(e){
   if (e) e.preventDefault();
-  if (isKiosk() || linkToken) return;
+  if (isKiosk() || (new URLSearchParams(location.search).get('t') || new URLSearchParams(location.search).get('token'))) return;
+
+  // show containers
   document.getElementById('buildingSelectionContainer').classList.add('hidden');
   document.getElementById('surveyContainer').classList.add('hidden');
   document.getElementById('analyticsContainer').classList.remove('hidden');
+
+  // also toggle inner pages (partials)
+  document.getElementById('buildingSelectionPage')?.classList.add('hidden');
+  document.getElementById('surveyPage')?.classList.add('hidden');
+  document.getElementById('analyticsPage')?.classList.remove('hidden');
+
   closeSidebar();
   syncBackSelectorVisibility();
 }
+
 export function switchToSurvey(e){
   if (e) e.preventDefault();
   if (isKiosk()) { showSurveyForm(); return; }
