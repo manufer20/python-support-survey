@@ -62,12 +62,12 @@
   body.kiosk-mode #surveyPage :is(input, select, textarea) { 
     scroll-margin-top: 12vh; /* ensure focused field centers above keyboard */
   }
-  /* Spacer shown only in kiosk to prevent keyboard covering bottom controls */
-  .kiosk-pad { display: none; }
-  .kiosk-mode .kiosk-pad { 
+  /* Spacers (top & bottom) shown only in kiosk to prevent keyboard overlap and give scroll room */
+  .kiosk-pad, .kiosk-pad-top { display: none; }
+  .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top { 
     display: block; 
-    height: 22vh; 
-    min-height: 160px; 
+    height: 28.6vh;   /* 30% more than the previous 22vh */
+    min-height: 208px; /* 30% more than the previous 160px */
   }
 
   /* Kiosk floating OK button */
@@ -80,6 +80,7 @@
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
+    <div class="kiosk-pad-top"></div>
     <div class="flex items-center justify-center mb-6">
       <h2 class="text-3xl md:text-4xl font-bold text-gray-700">Student Satisfaction Survey</h2>
     </div>
