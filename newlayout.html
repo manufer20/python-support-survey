@@ -30,9 +30,10 @@
     .kiosk-mode #buildingSelectionPage,
     .kiosk-mode #analyticsPage { display:none !important; }
 
-    .kiosk-mode html, .kiosk-mode body { height:100%; overflow:hidden; }
-    .kiosk-mode body{ position:fixed; inset:0; height:100vh; width:100vw; overscroll-behavior:none; }
-    .kiosk-mode #mainWrapper{ height:100vh; overflow:hidden; }
+    /* Allow scrolling in kiosk mode */
+    .kiosk-mode html, .kiosk-mode body { height:auto; overflow:auto; }
+    .kiosk-mode body{ position:static; inset:auto; height:auto; width:auto; overscroll-behavior:contain; }
+    .kiosk-mode #mainWrapper{ height:auto; overflow:visible; }
 
     .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
     .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
@@ -986,10 +987,6 @@
       const kioskActive = isKiosk();
       if (kioskEnterBtn) kioskEnterBtn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
     }
-    function blockScroll(e){ if (isKiosk()) { e.preventDefault(); } }
-    window.addEventListener('touchmove', blockScroll, {passive:false});
-    window.addEventListener('wheel', blockScroll, {passive:false});
-    document.addEventListener('focusout', () => { if (isKiosk()) { setTimeout(() => { window.scrollTo(0,0); }, 50); } });
     kioskEnterBtn?.addEventListener('click', ()=> setKiosk(true));
 
     function fsChangeHandler(){
