@@ -70,8 +70,30 @@ export function wireKiosk() {
   syncFabVisibility();
 }
 
-export function syncFabVisibility(){
-  const onSurvey = !document.getElementById('surveyContainer').classList.contains('hidden');
-  const kioskActive = isKiosk();
-  if (kioskEnterBtn()) kioskEnterBtn().style.display = (!linkToken && onSurvey && !kioskActive) ? '' : 'none';
+// export function syncFabVisibility(){
+//   const onSurvey = !document.getElementById('surveyContainer').classList.contains('hidden');
+//   const kioskActive = isKiosk();
+//   if (kioskEnterBtn()) kioskEnterBtn().style.display = (!linkToken && onSurvey && !kioskActive) ? '' : 'none';
+// }
+
+// Ensure the "Enter Tablet mode" FAB appears whenever the survey is visible
+export function syncFabVisibility() {
+  const btn = document.getElementById('kioskEnter');
+  if (!btn) return;
+
+  // Students coming via Discord/QR (token or building in URL) never see the FAB
+  const params = new URLSearchParams(location.search);
+  const tokenMode = !!(params.get('t') || params.get('token') || params.get('b'));
+
+  const sc = document.getElementById('surveyContainer'); // container that gets toggled
+  const sp = document.getElementById('surveyPage');      // inner partial (may not be mounted yet)
+
+  const containerVisible = sc && !sc.classList.contains('hidden');
+  const innerVisible     = !sp || !sp.classList.contains('hidden'); // if not present yet, don't block
+
+  const onSurvey = containerVisible && innerVisible;
+  const kioskActive = typeof isKiosk === 'function' ? isKiosk() : false;
+
+  // Show only when: not token/QR, on the survey, and not already in kiosk
+  btn.style.display = (!tokenMode && onSurvey && !kioskActive) ? '' : 'none';
 }

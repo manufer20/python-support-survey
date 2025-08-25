@@ -1,7 +1,7 @@
 import { endpoint, tokenEndpoint, qrSignEndpoint, STORAGE, state, saveSelectedBuilding, qpWD, linkToken } from './config.js';
 import { getSavedKey } from './auth.js';
 import { showError } from './errors.js';
-import { isKiosk } from './kiosk.js';
+import { isKiosk, syncFabVisibility } from './kiosk.js';
 
 const overlay = () => document.getElementById('sidebarOverlay');
 const sidebar = () => document.getElementById('sidebar');
@@ -24,6 +24,7 @@ export function showBuildingSelection(){
   document.getElementById('analyticsPage')?.classList.add('hidden');
 
   syncBackSelectorVisibility();
+  syncFabVisibility();
 }
 
 export function showSurveyForm(){
@@ -44,6 +45,7 @@ export function showSurveyForm(){
   if (yes && no) { yes.checked = !!preferWD; no.checked = !preferWD; }
 
   syncBackSelectorVisibility();
+  syncFabVisibility();
 }
 
 export function switchToAnalytics(e){
@@ -62,6 +64,7 @@ export function switchToAnalytics(e){
 
   closeSidebar();
   syncBackSelectorVisibility();
+  syncFabVisibility();
 }
 
 export function switchToSurvey(e){
@@ -218,4 +221,5 @@ export function wireBuildingPage(){
 
   applySidebarVisibility();
   syncBackSelectorVisibility();
+  syncFabVisibility();
 }
