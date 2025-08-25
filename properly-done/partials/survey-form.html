@@ -1,6 +1,6 @@
 <style>
   /* Supporter (pre-tablet) view only — make survey compact like the old centered card */
-  body:not(.student-flow) #surveyPage #surveyCard { max-width: 28rem; }
+  body:not(.student-flow) #surveyPage #surveyCard { max-width: 36rem; }
   body:not(.student-flow) #surveyPage #surveyCard h2 { font-size: 1.5rem; line-height: 2rem; /* ~text-2xl */ }
 
   /* Normalize all the previously enlarged text sizes back to base in supporter view */
@@ -16,6 +16,9 @@
   /* The leading "s" box and submit button compact sizing */
   body:not(.student-flow) #surveyPage #surveyCard .prefix-s { padding-left: .75rem; padding-right: .75rem; font-size: 1rem; }
   body:not(.student-flow) #surveyPage #surveyCard #submitButton { padding: .75rem 1.5rem; font-size: 1rem; }
+
+  /* Tablet (kiosk) — restore wide layout */
+  body.kiosk-mode.student-flow #surveyPage #surveyCard { max-width: 64rem; }
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
