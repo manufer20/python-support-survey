@@ -21,7 +21,7 @@
   body.student-flow:not(.kiosk-mode) #surveyPage #surveyCard { max-width: 44rem; }
 
   /* === Kiosk / Tablet mode — force LARGE width like building selector === */
-  body.kiosk-mode #surveyPage { padding: 1rem !important; }
+  body.kiosk-mode #surveyPage { padding: 1rem !important; min-height: 100vh !important; }
   body.kiosk-mode #surveyCard{
     max-width: min(96vw, 72rem) !important; /* ~xl:max-w-6xl, fill most of tablet width */
     width: 100% !important;
