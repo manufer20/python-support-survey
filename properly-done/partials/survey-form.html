@@ -1,0 +1,87 @@
+<div id="surveyPage" class="flex-1 flex items-center justify-center p-4 hidden">
+  <div id="surveyCard" class="w-full max-w-xl md:max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
+    <div class="flex items-center justify-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-700">Student Satisfaction Survey</h2>
+    </div>
+
+    <form id="surveyForm" class="space-y-6">
+      <div id="roleWorkshopGroup" class="grid gap-3 sm:grid-cols-3 sm:gap-6 items-start">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 order-1 sm:order-1 sm:col-span-2">
+          <label class="inline-flex items-center text-gray-700">
+            <input type="radio" name="role" value="student" class="form-radio" checked />
+            <span class="ml-2">Student</span>
+          </label>
+          <label class="inline-flex items-center text-gray-700">
+            <input type="radio" name="role" value="employee" class="form-radio" />
+            <span class="ml-2">PhD&nbsp;/&nbsp;Employee</span>
+          </label>
+        </div>
+
+        <div class="order-3 sm:order-2">
+          <fieldset>
+            <legend class="block text-gray-700 mb-2 font-medium">Attended workshop?</legend>
+            <div class="flex items-center gap-4 sm:justify-end">
+              <label class="inline-flex items-center text-gray-700">
+                <input type="radio" id="workshop_yes" name="workshop" value="yes" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
+                <span class="ml-2">Yes</span>
+              </label>
+              <label class="inline-flex items-center text-gray-700">
+                <input type="radio" id="workshop_no" name="workshop" value="no" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
+                <span class="ml-2">No</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
+          <label class="block text-gray-700 mb-2 font-medium" for="student_number">Student Number:</label>
+          <div class="flex">
+            <span class="inline-flex items-center px-3 text-gray-700 bg-gray-200 border border-r-0 border-gray-300 rounded-l">s</span>
+            <input id="student_number" name="student_number" type="text" inputmode="numeric" pattern="[0-9]{6}" placeholder="e.g. 123456" title="Enter 6 digits only. Example: s123456 (type only the digits after ‘s’)" class="flex-1 border border-gray-300 p-2 sm:p-3 rounded-r focus:ring-2 focus:ring-red-500 focus:border-red-500" required/>
+          </div>
+        </div>
+
+        <div id="usernameWrapper" class="hidden order-2 sm:order-3 sm:col-span-3">
+          <label class="block text-gray-700 mb-2 font-medium" for="dtu_username">DTU Credentials:</label>
+          <input id="dtu_username" name="dtu_username" type="text" pattern="[A-Za-z]{3,20}" placeholder="e.g. manufer" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
+        </div>
+      </div>
+
+      <div>
+        <span class="block text-gray-700 mb-3 font-medium">Satisfaction (1 to 5):</span>
+        <div class="grid grid-cols-5 gap-2 sm:gap-4 place-items-center">
+          <label class="flex flex-col items-center text-gray-600 cursor-pointer">
+            <input type="radio" name="satisfaction" value="1" class="form-radio mb-1 sm:mb-2" required />
+            <img src="./assets/face1.png" alt="Satisfaction level 1" class="w-9 h-9 sm:w-10 sm:h-10" />
+          </label>
+          <label class="flex flex-col items-center text-gray-600 cursor-pointer">
+            <input type="radio" name="satisfaction" value="2" class="form-radio mb-1 sm:mb-2" />
+            <img src="./assets/face2.png" alt="Satisfaction level 2" class="w-9 h-9 sm:w-10 sm:h-10" />
+          </label>
+          <label class="flex flex-col items-center text-gray-600 cursor-pointer">
+            <input type="radio" name="satisfaction" value="3" class="form-radio mb-1 sm:mb-2" />
+            <img src="./assets/face3.png" alt="Satisfaction level 3" class="w-9 h-9 sm:w-10 sm:h-10" />
+          </label>
+          <label class="flex flex-col items-center text-gray-600 cursor-pointer">
+            <input type="radio" name="satisfaction" value="4" class="form-radio mb-1 sm:mb-2" />
+            <img src="./assets/face4.png" alt="Satisfaction level 4" class="w-9 h-9 sm:w-10 sm:h-10" />
+          </label>
+          <label class="flex flex-col items-center text-gray-600 cursor-pointer">
+            <input type="radio" name="satisfaction" value="5" class="form-radio mb-1 sm:mb-2" />
+            <img src="./assets/face5.png" alt="Satisfaction level 5" class="w-9 h-9 sm:w-10 sm:h-10" />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2 font-medium" for="course_number">Course Number or Name (optional):</label>
+        <input id="course_number" name="course_number" list="courses" type="text" placeholder="e.g. 01003 - Mathematics 1a" class="w-full border border-gray-300 p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
+        <datalist id="courses"></datalist>
+      </div>
+
+      <button id="submitButton" type="submit" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 w-full font-medium transition-colors">
+        Submit Survey
+      </button>
+    </form>
+  </div>
+</div>
