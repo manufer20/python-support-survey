@@ -37,10 +37,20 @@
   body.kiosk-mode #surveyCard .md\:text-xl { font-size: 1.5rem !important; }
   body.kiosk-mode #surveyCard .form-radio { width: 1.5rem; height: 1.5rem; }
   body.kiosk-mode #surveyCard .prefix-s { font-size: 1.2rem !important; padding-left: 1rem; padding-right: 1rem; }
+  body.kiosk-mode #surveyPage #roleWorkshopGroup .wk-inline > span { white-space: nowrap; }
 
   /* Align "Attended workshop?" inline with Yes/No and flush to the right on ≥sm */
   @media (min-width: 640px) {
-    #surveyPage #roleWorkshopGroup .wk-inline { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
+    #surveyPage #roleWorkshopGroup .wk-inline {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: nowrap;         /* keep all controls on one line */
+    }
+    #surveyPage #roleWorkshopGroup .wk-inline > span {
+      white-space: nowrap;       /* prevent "Attended workshop?" from breaking */
+    }
   }
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
