@@ -19,3 +19,10 @@
   user-select: auto !important;
   pointer-events: auto !important;
 }
+
+/* Hide the top bar when in Tablet (kiosk) mode */
+body.kiosk-mode header {
+  display: none !important;
+}
+
+body.student-flow header { display: none !important; }
