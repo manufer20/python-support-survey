@@ -1,30 +1,29 @@
 <style>
   /* Supporter (pre-tablet) view only — make survey compact like the old centered card */
-  body:not(.student-flow) #surveyPage #surveyCard { max-width: 60rem; }
-  body:not(.student-flow) #surveyPage #surveyCard h2 { font-size: 1.5rem; line-height: 2rem; /* ~text-2xl */ }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard { max-width: 60rem; }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard h2 { font-size: 1.5rem; line-height: 2rem; /* ~text-2xl */ }
 
   /* Normalize all the previously enlarged text sizes back to base in supporter view */
-  body:not(.student-flow) #surveyPage #surveyCard .text-lg,
-  body:not(.student-flow) #surveyPage #surveyCard .md\:text-xl { font-size: 1rem; line-height: 1.5rem; }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard .text-lg,
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard .md\:text-xl { font-size: 1rem; line-height: 1.5rem; }
 
   /* Inputs and radios spacing in supporter view */
-  body:not(.student-flow) #surveyPage #surveyCard input[type="text"],
-  body:not(.student-flow) #surveyPage #surveyCard input[list],
-  body:not(.student-flow) #surveyPage #surveyCard input[type="number"] { padding: .5rem .75rem; font-size: 1rem; }
-  body:not(.student-flow) #surveyPage #surveyCard .form-radio { width: 1rem; height: 1rem; }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard input[type="text"],
+  body:not(.student-flow2):not(.kiosk-mode) #surveyPage #surveyCard input[list],
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard input[type="number"] { padding: .5rem .75rem; font-size: 1rem; }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard .form-radio { width: 1rem; height: 1rem; }
 
   /* The leading "s" box and submit button compact sizing */
-  body:not(.student-flow) #surveyPage #surveyCard .prefix-s { padding-left: .75rem; padding-right: .75rem; font-size: 1rem; }
-  body:not(.student-flow) #surveyPage #surveyCard #submitButton { padding: .75rem 1.5rem; font-size: 1rem; }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard .prefix-s { padding-left: .75rem; padding-right: .75rem; font-size: 1rem; }
+  body:not(.student-flow):not(.kiosk-mode) #surveyPage #surveyCard #submitButton { padding: .75rem 1.5rem; font-size: 1rem; }
 
   /* Token/QR student-flow (non-kiosk) — keep narrow flat layout */
   body.student-flow:not(.kiosk-mode) #surveyPage #surveyCard { max-width: 44rem; }
 
   /* === Kiosk / Tablet mode — force LARGE width like building selector === */
-  body.kiosk-mode.student-flow #surveyPage { padding: 1rem !important; }
-  body.kiosk-mode.student-flow #surveyPage #surveyCard,
-  body.kiosk-mode.student-flow #surveyCard{
-    max-width: 72rem !important; /* ~xl:max-w-6xl */
+  body.kiosk-mode #surveyPage { padding: 1rem !important; }
+  body.kiosk-mode #surveyCard{
+    max-width: min(96vw, 72rem) !important; /* ~xl:max-w-6xl, fill most of tablet width */
     width: 100% !important;
     margin: 1rem auto !important;
     border-radius: 0.75rem !important; /* rounded card */
