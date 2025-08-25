@@ -38,10 +38,9 @@
   body.kiosk-mode #surveyCard .form-radio { width: 1.5rem; height: 1.5rem; }
   body.kiosk-mode #surveyCard .prefix-s { font-size: 1.2rem !important; padding-left: 1rem; padding-right: 1rem; }
 
-  /* Align "Attended workshop?" inline with Yes/No and right-aligned on wider screens */
+  /* Align "Attended workshop?" inline with Yes/No and flush to the right on ≥sm */
   @media (min-width: 640px) {
-    #surveyPage #roleWorkshopGroup fieldset { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
-    #surveyPage #roleWorkshopGroup fieldset legend { margin: 0; }
+    #surveyPage #roleWorkshopGroup .wk-inline { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
   }
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
@@ -64,19 +63,17 @@
         </div>
 
         <div class="order-3 sm:order-2">
-          <fieldset>
-            <legend class="block text-gray-700 mb-2 font-medium text-lg">Attended workshop?</legend>
-            <div class="flex items-center gap-4 sm:justify-end">
-              <label class="inline-flex items-center text-gray-700 text-lg">
-                <input type="radio" id="workshop_yes" name="workshop" value="yes" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
-                <span class="ml-2">Yes</span>
-              </label>
-              <label class="inline-flex items-center text-gray-700 text-lg">
-                <input type="radio" id="workshop_no" name="workshop" value="no" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
-                <span class="ml-2">No</span>
-              </label>
-            </div>
-          </fieldset>
+          <div class="wk-inline">
+            <span class="block text-gray-700 font-medium text-lg">Attended workshop?</span>
+            <label class="inline-flex items-center text-gray-700 text-lg">
+              <input type="radio" id="workshop_yes" name="workshop" value="yes" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
+              <span class="ml-2">Yes</span>
+            </label>
+            <label class="inline-flex items-center text-gray-700 text-lg">
+              <input type="radio" id="workshop_no" name="workshop" value="no" class="form-radio h-5 w-5 text-red-500 border-gray-300" />
+              <span class="ml-2">No</span>
+            </label>
+          </div>
         </div>
 
         <div id="studentWrapper" class="order-2 sm:order-3 sm:col-span-3">
