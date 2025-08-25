@@ -66,6 +66,99 @@ export function wireSurveyForm(){
   const studentNumInput = document.getElementById('student_number');
   const usernameInput   = document.getElementById('dtu_username');
 
+  // --- Kiosk UX helpers & hardening for inputs ---
+  // Hint mobile keyboards and constrain length at the DOM level
+  if (studentNumInput) {
+    try {
+      studentNumInput.setAttribute('inputmode', 'numeric');
+      studentNumInput.setAttribute('enterkeyhint', 'next');
+      studentNumInput.setAttribute('maxlength', '6');
+      studentNumInput.setAttribute('autocomplete', 'one-time-code');
+    } catch {}
+  }
+
+  // Local helper to jump to the satisfaction row without auto-selecting
+  function jumpToSatisfaction() {
+    const firstSmile = document.querySelector('input[name="satisfaction"]');
+    if (firstSmile) {
+      try { firstSmile.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+      try { firstSmile.focus({ preventScroll: true }); } catch {}
+    }
+  }
+
+  // Digits-only enforcement for the student number
+  if (studentNumInput) {
+    // Block non-digits before they land
+    studentNumInput.addEventListener('beforeinput', (e) => {
+      // Allow deletions/moves
+      const t = e.inputType || '';
+      if (t.startsWith('delete') || t.startsWith('history') || t.includes('format')) return;
+      const data = (e.data ?? '');
+      if (data && /\D/.test(data)) { e.preventDefault(); }
+    });
+
+    // Strip any stray non-digits (incl. from auto-fill) and cap to 6
+    studentNumInput.addEventListener('input', () => {
+      const cleaned = (studentNumInput.value || '').replace(/\D/g, '').slice(0, 6);
+      if (studentNumInput.value !== cleaned) studentNumInput.value = cleaned;
+    });
+
+    // Guard paste
+    studentNumInput.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const txt = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+      const cleaned = txt.replace(/\D/g, '').slice(0, 6);
+      const start = studentNumInput.selectionStart ?? studentNumInput.value.length;
+      const end   = studentNumInput.selectionEnd ?? studentNumInput.value.length;
+      const v = studentNumInput.value;
+      const next = (v.slice(0, start) + cleaned + v.slice(end)).replace(/\D/g, '').slice(0, 6);
+      studentNumInput.value = next;
+      // Trigger validation UI
+      studentNumInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // Allow only control keys + digits on keydown
+    studentNumInput.addEventListener('keydown', (e) => {
+      const allowedKeys = new Set(['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab']);
+      const isDigit = (e.key && /^[0-9]$/.test(e.key)) || (e.code && /^Numpad[0-9]$/.test(e.code));
+      if (e.key === 'Enter') {
+        // Enter/Next moves to satisfaction
+        e.preventDefault();
+        jumpToSatisfaction();
+        return;
+      }
+      if (allowedKeys.has(e.key) || isDigit) return;
+      // Allow shortcuts like Cmd/Ctrl+A/C/V/X
+      if ((e.ctrlKey || e.metaKey) && ['a','c','v','x','A','C','V','X'].includes(e.key)) return;
+      e.preventDefault();
+    });
+  }
+
+  // Smoothly center the active input in kiosk mode
+  [studentNumInput, usernameInput].forEach((inp) => {
+    if (!inp) return;
+    inp.addEventListener('focus', () => {
+      if (inKiosk && typeof inKiosk === 'function' && inKiosk()) {
+        setTimeout(() => { try { inp.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 120);
+      }
+    });
+  });
+
+  // Tap anywhere outside inputs to dismiss the keyboard (tablet mode only)
+  if (!window.__surveyTapToDismissAttached) {
+    document.addEventListener('pointerdown', (e) => {
+      if (!(inKiosk && typeof inKiosk === 'function' && inKiosk())) return;
+      const t = e.target;
+      // Keep focus if tapping an input/select/textarea/datalist or their UI
+      if (t && (t.closest('input, textarea, select, datalist, .ui-keep-focus'))) return;
+      const active = document.activeElement;
+      if (active && active.matches && active.matches('input, textarea, select')) {
+        try { active.blur(); } catch {}
+      }
+    }, { passive: true });
+    window.__surveyTapToDismissAttached = true;
+  }
+
   // role toggle + clean abandoned field
   function toggleRole() {
     const isStudent = form.role.value === 'student';
@@ -87,6 +180,9 @@ export function wireSurveyForm(){
   }
   form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', toggleRole));
   toggleRole();
+
+  // If the floating kiosk OK button exists, wire its behavior
+  try { wireKioskOk && wireKioskOk(); } catch {}
 
   function setStudentCustomValidation() {
     const isStudent = (form.role.value === 'student');
