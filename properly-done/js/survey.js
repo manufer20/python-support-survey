@@ -1,7 +1,39 @@
+
 import { endpoint, STORAGE, state, linkToken, qpWD } from './config.js';
 import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
+
+// --- TEMP: allow scrolling in kiosk mode (undo hard lock) ---
+let __kioskScrollPatched = false;
+function enableKioskScrolling() {
+  if (__kioskScrollPatched) return;
+  if (!document.body || !document.body.classList.contains('kiosk-mode')) return;
+
+  // Override CSS locks with inline styles
+  try {
+    document.documentElement.style.overflow = 'auto';
+    document.body.style.overflow = 'auto';
+    document.body.style.position = 'static';
+    document.body.style.inset = 'auto';
+    document.body.style.height = 'auto';
+    document.body.style.width = 'auto';
+    const mw = document.getElementById('mainWrapper');
+    if (mw) { mw.style.height = 'auto'; mw.style.overflow = 'auto'; }
+  } catch {}
+
+  // Neutralize global preventDefault handlers from kiosk.js
+  const allowScroll = (e) => {
+    if (document.body.classList.contains('kiosk-mode')) {
+      // Stop the blocking handler from firing
+      try { e.stopImmediatePropagation(); } catch {}
+    }
+  };
+  window.addEventListener('touchmove', allowScroll, { capture: true, passive: true });
+  window.addEventListener('wheel', allowScroll, { capture: true, passive: true });
+
+  __kioskScrollPatched = true;
+}
 
 export async function verifyOneTimeToken() {
   if (!linkToken) return true;
@@ -55,6 +87,16 @@ function loadCourses() {
 export function wireSurveyForm(){
   loadCourses();
   verifyOneTimeToken();
+
+  // Bring back scrolling when entering tablet (kiosk) mode
+  enableKioskScrolling();
+  // If tablet mode is toggled later, re-apply
+  try {
+    const __kioskClassWatcher = new MutationObserver(() => {
+      if (document.body.classList.contains('kiosk-mode')) enableKioskScrolling();
+    });
+    __kioskClassWatcher.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  } catch {}
 
   const form = document.getElementById("surveyForm");
   const thankYou = document.getElementById("thankYouModal");
