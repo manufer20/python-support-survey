@@ -71,6 +71,33 @@
   }
 
 </style>
+  /* Touch-friendly custom suggestions for course input (mobile/tablet fallback) */
+  .course-suggest {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.25rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;           /* gray-300 */
+    border-radius: 0.5rem;               /* rounded-lg */
+    max-height: 14rem;                   /* ~224px */
+    overflow: auto;
+    box-shadow: 0 10px 25px rgba(17,24,39,.12);
+    z-index: 70;
+  }
+  .course-suggest li {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  .course-suggest li:hover,
+  .course-suggest li:focus {
+    background: #f9fafb;                 /* gray-50 */
+    outline: none;
+  }
+</style>
+</style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
     <div class="kiosk-pad-top"></div>
@@ -145,10 +172,11 @@
         </div>
       </div>
 
-      <div>
+      <div class="relative">
         <label class="block text-gray-700 mb-2 font-medium text-lg" for="course_number">Course Number or Name (optional):</label>
         <input id="course_number" name="course_number" list="courses" type="text" placeholder="e.g. 01003 - Mathematics 1a" enterkeyhint="done" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full border border-gray-300 p-3 sm:p-4 text-lg rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"/>
         <datalist id="courses"></datalist>
+        <ul id="courseSuggest" class="course-suggest hidden ui-keep-focus" role="listbox" aria-label="Course suggestions"></ul>
       </div>
 
       <button id="submitButton" type="submit" class="bg-red-500 text-white px-8 py-4 text-lg rounded-lg hover:bg-red-600 w-full font-medium transition-colors">
