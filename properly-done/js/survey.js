@@ -82,26 +82,181 @@ function loadCourses() {
         if (!inQuotes) { buffer = line; if (quoteCount % 2 !== 0) inQuotes = true; else records.push(buffer); }
         else { buffer += '\n' + line; if (quoteCount % 2 !== 0) { inQuotes = false; records.push(buffer); } }
       });
-      records.shift();
-      const dl = document.getElementById('courses');
+      // Remove header
+      if (records.length && records[0].toLowerCase().includes('course')) { records.shift(); }
+
+      const options = [];
       records.forEach(record => {
         const idx = record.indexOf(',');
+        if (idx === -1) return;
         const code = record.slice(0, idx).trim();
         let rawName = record.slice(idx + 1);
         rawName = rawName.replace(/\r/g, '').replace(/CR$/, '').replace(/^"+|"+$/g, '').trim();
-        const opt = document.createElement('option');
-        opt.value = `${code} - ${rawName}`;
-        dl.appendChild(opt);
+        if (!code || !rawName) return;
+        options.push(`${code} - ${rawName}`);
       });
+
+      // Expose for JS autocomplete and also populate datalist for desktop
+      window.__COURSE_OPTIONS = options;
+
+      const dl = document.getElementById('courses');
+      if (dl) {
+        dl.innerHTML = '';
+        options.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          dl.appendChild(opt);
+        });
+      }
+      // Announce readiness
+      document.dispatchEvent(new CustomEvent('courses:ready'));
     } catch (err) {
       console.error('Error loading courses.csv:', err);
     }
   })();
 }
 
+let __courseAutoOnce = false;
+
+function isTouchDevice() {
+  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+}
+
+function onCoursesReady(cb) {
+  if (Array.isArray(window.__COURSE_OPTIONS) && window.__COURSE_OPTIONS.length) {
+    cb();
+    return;
+  }
+  const handler = () => { document.removeEventListener('courses:ready', handler); cb(); };
+  document.addEventListener('courses:ready', handler);
+}
+
+function setupCourseAutocomplete() {
+  if (__courseAutoOnce) return;
+  __courseAutoOnce = true;
+
+  const input = document.getElementById('course_number');
+  if (!input) return;
+
+  // Only apply on touch devices (desktop keeps native datalist UX)
+  if (!isTouchDevice()) return;
+
+  // So iOS/Android don't try to show native dropdown simultaneously
+  try { input.setAttribute('autocomplete', 'off'); } catch {}
+
+  // Inject minimal CSS once
+  if (!document.getElementById('course-autocomplete-css')) {
+    const st = document.createElement('style');
+    st.id = 'course-autocomplete-css';
+    st.textContent = `
+      .course-autocomplete{position:absolute;z-index:1000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;}
+      .course-autocomplete .item{padding:.5rem .75rem;cursor:pointer;}
+      .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#f3f4f6;}
+      .course-autocomplete .item.disabled{opacity:.6;cursor:default}
+      @media (prefers-color-scheme: dark){
+        .course-autocomplete{background:#111827;color:#e5e7eb;border-color:#374151}
+        .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#1f2937}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  // Create dropdown container in body so it can overlay properly
+  const box = document.createElement('div');
+  box.className = 'course-autocomplete ui-keep-focus';
+  document.body.appendChild(box);
+
+  let results = [];
+  let activeIndex = -1;
+
+  function positionBox() {
+    const r = input.getBoundingClientRect();
+    box.style.minWidth = Math.max(260, Math.floor(r.width)) + 'px';
+    box.style.left = Math.floor(r.left + window.scrollX) + 'px';
+    box.style.top = Math.floor(r.bottom + window.scrollY + 6) + 'px';
+  }
+
+  function showBox() { positionBox(); box.style.display = 'block'; }
+  function hideBox() { box.style.display = 'none'; activeIndex = -1; }
+
+  function render(list) {
+    results = list;
+    if (!results.length) {
+      box.innerHTML = `<div class="item disabled ui-keep-focus">No matches</div>`;
+      showBox();
+      return;
+    }
+    box.innerHTML = results.map((v,i)=>`<div class="item ui-keep-focus" data-i="${i}">${v}</div>`).join('');
+    activeIndex = 0;
+    highlight(activeIndex);
+    showBox();
+  }
+
+  function highlight(i) {
+    Array.from(box.querySelectorAll('.item')).forEach(el => el.classList.remove('active'));
+    const el = box.querySelector(`.item[data-i="${i}"]`);
+    if (el) el.classList.add('active');
+  }
+
+  function pick(i) {
+    const v = results[i];
+    if (!v) return;
+    input.value = v;
+    input.dispatchEvent(new Event('input', { bubbles:true }));
+    input.dispatchEvent(new Event('change', { bubbles:true }));
+    hideBox();
+    // Keep caret at end for quick edits
+    try {
+      input.focus({ preventScroll: true });
+      const len = input.value.length;
+      input.setSelectionRange(len, len);
+    } catch {}
+  }
+
+  function filterNow() {
+    const q = (input.value || '').toLowerCase().trim();
+    const all = Array.isArray(window.__COURSE_OPTIONS) ? window.__COURSE_OPTIONS : [];
+    const list = !q ? all.slice(0, 10)
+                    : all.filter(v => v.toLowerCase().includes(q)).slice(0, 10);
+    render(list);
+  }
+
+  input.addEventListener('focus', () => { filterNow(); });
+  input.addEventListener('input', () => { filterNow(); });
+  input.addEventListener('keydown', (e) => {
+    if (box.style.display === 'none') return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (activeIndex < results.length - 1) { activeIndex++; highlight(activeIndex); } }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (activeIndex > 0) { activeIndex--; highlight(activeIndex); } }
+    else if (e.key === 'Enter') { e.preventDefault(); if (activeIndex >= 0) pick(activeIndex); }
+    else if (e.key === 'Escape') { e.preventDefault(); hideBox(); }
+  });
+
+  box.addEventListener('pointerdown', (e) => {
+    const it = e.target.closest('.item');
+    if (!it || it.classList.contains('disabled')) return;
+    const i = Number(it.getAttribute('data-i'));
+    pick(i);
+  });
+
+  // Hide when tapping outside
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target;
+    if (t === input || box.contains(t)) return;
+    hideBox();
+  });
+
+  // Keep box positioned on scroll/resize (important for kiosk)
+  ['scroll','resize','orientationchange'].forEach(evt => {
+    window.addEventListener(evt, () => { if (box.style.display !== 'none') positionBox(); }, { passive:true });
+  });
+}
+
 export function wireSurveyForm(){
   loadCourses();
   verifyOneTimeToken();
+  onCoursesReady(() => {
+    try { setupCourseAutocomplete(); } catch (e) { console.error('autocomplete init failed', e); }
+  });
 
   // Bring back scrolling when entering tablet (kiosk) mode
   enableKioskScrolling();
