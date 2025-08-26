@@ -149,8 +149,17 @@ function setupCourseAutocomplete() {
     const st = document.createElement('style');
     st.id = 'course-autocomplete-css';
     st.textContent = `
-      .course-autocomplete{position:fixed;z-index:10000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;}
-      .course-autocomplete .item{padding:.5rem .75rem;cursor:pointer;}
+      .course-autocomplete{
+        position:fixed;z-index:10000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;
+        box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;
+        -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+        touch-action: pan-y;               /* allow vertical panning without triggering taps */
+        overscroll-behavior: contain;      /* keep page from stealing the scroll */
+      }
+      .course-autocomplete .item{
+        padding:.5rem .75rem;cursor:pointer;
+        touch-action: manipulation;        /* taps okay, avoid gesture side-effects */
+      }
       .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#f3f4f6;}
       .course-autocomplete .item.disabled{opacity:.6;cursor:default}
       @media (prefers-color-scheme: dark){
@@ -274,7 +283,42 @@ function setupCourseAutocomplete() {
     else if (e.key === 'Escape') { e.preventDefault(); hideBox(); }
   });
 
+  // Touch-friendly: only pick on a TAP (no significant movement). Allow vertical scrolling without selecting.
+  let tap = { down:false, moved:false, x:0, y:0, id:null };
+  const MOVE_THRESH = 8; // px
+
   box.addEventListener('pointerdown', (e) => {
+    // Start tracking only if the press is on an item
+    const it = e.target.closest('.item');
+    tap.down = !!it && !it.classList.contains('disabled');
+    tap.moved = false;
+    tap.id = e.pointerId;
+    tap.x = e.clientX;
+    tap.y = e.clientY;
+  }, { passive: true });
+
+  box.addEventListener('pointermove', (e) => {
+    if (!tap.down) return;
+    const dx = Math.abs((e.clientX ?? 0) - tap.x);
+    const dy = Math.abs((e.clientY ?? 0) - tap.y);
+    if (dx > MOVE_THRESH || dy > MOVE_THRESH) tap.moved = true; // treat as scroll/drag
+  }, { passive: true });
+
+  function endTap(e){
+    if (!tap.down) return;
+    const wasTap = !tap.moved;
+    tap.down = false;
+    if (!wasTap) return;
+    const it = e.target.closest('.item');
+    if (!it || it.classList.contains('disabled')) return;
+    const i = Number(it.getAttribute('data-i'));
+    pick(i);
+  }
+  box.addEventListener('pointerup', endTap, { passive: true });
+  box.addEventListener('pointercancel', () => { tap.down = false; }, { passive: true });
+
+  // Mouse support (desktop) — normal clicks still pick.
+  box.addEventListener('click', (e) => {
     const it = e.target.closest('.item');
     if (!it || it.classList.contains('disabled')) return;
     const i = Number(it.getAttribute('data-i'));
