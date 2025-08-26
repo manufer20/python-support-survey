@@ -248,12 +248,6 @@ function setupCourseAutocomplete() {
       const len = input.value.length;
       input.setSelectionRange(len, len);
     } catch {}
-    // Re-center the focused field in kiosk mode (keeps it visible above the keyboard)
-    if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => {
-        try { input.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {}
-      }, 80);
-    }
   }
 
   function filterNow() {
@@ -504,8 +498,6 @@ export function wireSurveyForm(){
           thankYou.classList.remove('hidden');
           redirectOnThankYouClose = true;
           setTimeout(() => { window.location.replace('https://pythonsupport.dtu.dk/'); }, 7000);
-          // Keep the layout centered while the thank-you modal is shown
-          setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
         } else {
           thankYou.classList.remove('hidden');
           form.reset();
@@ -517,8 +509,6 @@ export function wireSurveyForm(){
           studentNumInput.value = '';
           studentNumInput.focus();
           document.activeElement?.blur();
-          // Re-center the card after submitting/resetting so the view doesn't drift
-          setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
           setTimeout(() => { thankYou.classList.add('hidden'); }, 3000);
         }
       } else {
