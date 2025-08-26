@@ -3,35 +3,6 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
-// --- TEMP: allow scrolling in kiosk mode (undo hard lock) ---
-let __kioskScrollPatched = false;
-function enableKioskScrolling() {
-  if (__kioskScrollPatched) return;
-  if (!document.body || !document.body.classList.contains('kiosk-mode')) return;
-
-  // Override CSS locks with inline styles
-  try {
-    document.documentElement.style.overflow = 'auto';
-    document.body.style.overflow = 'auto';
-    document.body.style.position = 'static';
-    document.body.style.inset = 'auto';
-    document.body.style.height = 'auto';
-    document.body.style.width = 'auto';
-    const mw = document.getElementById('mainWrapper');
-    if (mw) { mw.style.height = 'auto'; mw.style.overflow = 'auto'; }
-  } catch {}
-
-  // Neutralize global preventDefault handlers from kiosk.js
-  const allowScroll = (e) => {
-    if (document.body.classList.contains('kiosk-mode')) {
-      try { e.stopImmediatePropagation(); } catch {}
-    }
-  };
-  window.addEventListener('touchmove', allowScroll, { capture: true, passive: true });
-  window.addEventListener('wheel', allowScroll, { capture: true, passive: true });
-
-  __kioskScrollPatched = true;
-}
 
 // Center the survey card in the viewport (used on tablet mode open/close keyboard)
 function centerSurveyCard(smooth = true) {
@@ -39,13 +10,13 @@ function centerSurveyCard(smooth = true) {
   if (!card) return;
   const behavior = smooth ? 'smooth' : 'auto';
   try {
-    card.scrollIntoView({ block: 'center', inline: 'nearest', behavior });
+    // Compute a stable center using the scrollingElement to avoid other listeners (like kiosk focusout) fighting us.
+    const rect = card.getBoundingClientRect();
+    const scrollEl = document.scrollingElement || document.documentElement;
+    const targetTop = (window.scrollY || scrollEl.scrollTop || 0) + rect.top + (rect.height / 2) - (window.innerHeight / 2);
+    scrollEl.scrollTo({ top: Math.max(0, targetTop), behavior });
   } catch {
-    try {
-      const rect = card.getBoundingClientRect();
-      const top = window.scrollY + rect.top + rect.height / 2 - window.innerHeight / 2;
-      window.scrollTo({ top, behavior });
-    } catch {}
+    try { card.scrollIntoView({ block: 'center', inline: 'nearest', behavior }); } catch {}
   }
 }
 
@@ -201,6 +172,7 @@ function setupCourseAutocomplete() {
   }
 
   function showBox() {
+    // Ensure content is measured then positioned
     positionBox();
     box.style.display = 'block';
   }
@@ -214,7 +186,9 @@ function setupCourseAutocomplete() {
     results = list;
     if (!results.length) {
       box.innerHTML = `<div class="item disabled ui-keep-focus">No matches</div>`;
+      // Show above the input even for the empty state
       showBox();
+      // A second pass after layout settle (fonts/images) for accuracy
       requestAnimationFrame(() => { if (box.style.display !== 'none') positionBox(); });
       return;
     }
@@ -244,11 +218,11 @@ function setupCourseAutocomplete() {
       const len = input.value.length;
       input.setSelectionRange(len, len);
     } catch {}
-    // NEW: keep the field visible / re-centered on tablets & phones
+    // On touch devices in kiosk mode, blur to close the keyboard and suppress kiosk focusout auto-scroll
     if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => {
-        try { input.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {}
-      }, 100);
+      try { input.blur(); } catch {}
+      // Re-center after the blur/keyboard animation finishes
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
     }
   }
 
@@ -297,26 +271,12 @@ export function wireSurveyForm(){
     try { setupCourseAutocomplete(); } catch (e) { console.error('autocomplete init failed', e); }
   });
 
-  // Bring back scrolling when entering tablet (kiosk) mode
-  enableKioskScrolling();
-
   // If starting in kiosk, center the card once the layout settles
   if (typeof inKiosk === 'function' && inKiosk()) {
     setTimeout(() => centerSurveyCard(true), 150);
   }
 
-  // If tablet mode is toggled later, re-apply
-  try {
-    const __kioskClassWatcher = new MutationObserver(() => {
-      if (document.body.classList.contains('kiosk-mode')) {
-        enableKioskScrolling();
-        setTimeout(() => centerSurveyCard(true), 150);
-      }
-    });
-    __kioskClassWatcher.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  } catch {}
-
-  // Re-center on viewport changes in kiosk mode
+  // Re-center on viewport changes in kiosk mode (e.g., orientation or keyboard height changes)
   window.addEventListener('resize', () => {
     if (typeof inKiosk === 'function' && inKiosk()) {
       setTimeout(() => centerSurveyCard(false), 200);
@@ -334,6 +294,7 @@ export function wireSurveyForm(){
   const usernameInput   = document.getElementById('dtu_username');
 
   // --- Kiosk UX helpers & hardening for inputs ---
+  // Hint mobile keyboards and constrain length at the DOM level
   if (studentNumInput) {
     try {
       studentNumInput.setAttribute('inputmode', 'numeric');
@@ -343,6 +304,7 @@ export function wireSurveyForm(){
     } catch {}
   }
 
+  // Local helper to jump to the satisfaction row without auto-selecting
   function jumpToSatisfaction() {
     const firstSmile = document.querySelector('input[name="satisfaction"]');
     if (firstSmile) {
@@ -351,19 +313,24 @@ export function wireSurveyForm(){
     }
   }
 
+  // Digits-only enforcement for the student number
   if (studentNumInput) {
+    // Block non-digits before they land
     studentNumInput.addEventListener('beforeinput', (e) => {
+      // Allow deletions/moves
       const t = e.inputType || '';
       if (t.startsWith('delete') || t.startsWith('history') || t.includes('format')) return;
       const data = (e.data ?? '');
       if (data && /\D/.test(data)) { e.preventDefault(); }
     });
 
+    // Strip any stray non-digits (incl. from auto-fill) and cap to 6
     studentNumInput.addEventListener('input', () => {
       const cleaned = (studentNumInput.value || '').replace(/\D/g, '').slice(0, 6);
       if (studentNumInput.value !== cleaned) studentNumInput.value = cleaned;
     });
 
+    // Guard paste
     studentNumInput.addEventListener('paste', (e) => {
       e.preventDefault();
       const txt = (e.clipboardData || window.clipboardData)?.getData('text') || '';
@@ -373,23 +340,28 @@ export function wireSurveyForm(){
       const v = studentNumInput.value;
       const next = (v.slice(0, start) + cleaned + v.slice(end)).replace(/\D/g, '').slice(0, 6);
       studentNumInput.value = next;
+      // Trigger validation UI
       studentNumInput.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
+    // Allow only control keys + digits on keydown
     studentNumInput.addEventListener('keydown', (e) => {
       const allowedKeys = new Set(['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab']);
       const isDigit = (e.key && /^[0-9]$/.test(e.key)) || (e.code && /^Numpad[0-9]$/.test(e.code));
       if (e.key === 'Enter') {
+        // Enter/Next moves to satisfaction
         e.preventDefault();
         jumpToSatisfaction();
         return;
       }
       if (allowedKeys.has(e.key) || isDigit) return;
+      // Allow shortcuts like Cmd/Ctrl+A/C/V/X
       if ((e.ctrlKey || e.metaKey) && ['a','c','v','x','A','C','V','X'].includes(e.key)) return;
       e.preventDefault();
     });
   }
 
+  // Smoothly center the active input in kiosk mode
   [studentNumInput, usernameInput].forEach((inp) => {
     if (!inp) return;
     inp.addEventListener('focus', () => {
@@ -399,26 +371,30 @@ export function wireSurveyForm(){
     });
     inp.addEventListener('blur', () => {
       if (inKiosk && typeof inKiosk === 'function' && inKiosk()) {
+        // Let the keyboard retract, then center the card
         setTimeout(() => centerSurveyCard(true), 220);
       }
     });
   });
 
-  // Tap outside inputs to dismiss keyboard (tablet mode only) and re-center card
+  // Tap anywhere outside inputs to dismiss the keyboard (tablet mode only)
   if (!window.__surveyTapToDismissAttached) {
     document.addEventListener('pointerdown', (e) => {
       if (!(inKiosk && typeof inKiosk === 'function' && inKiosk())) return;
       const t = e.target;
+      // Keep focus if tapping an input/select/textarea/datalist or their UI
       if (t && (t.closest('input, textarea, select, datalist, .ui-keep-focus'))) return;
       const active = document.activeElement;
       if (active && active.matches && active.matches('input, textarea, select')) {
         try { active.blur(); } catch {}
+        // After dismissing, re-center the survey card
         setTimeout(() => { if (inKiosk && typeof inKiosk === 'function' && inKiosk()) centerSurveyCard(true); }, 180);
       }
     }, { passive: true });
     window.__surveyTapToDismissAttached = true;
-    }
+  }
 
+  // role toggle + clean abandoned field
   function toggleRole() {
     const isStudent = form.role.value === 'student';
     studentWrapper.classList.toggle('hidden', !isStudent);
@@ -439,6 +415,7 @@ export function wireSurveyForm(){
   }
   form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', toggleRole));
   toggleRole();
+
 
   function setStudentCustomValidation() {
     const isStudent = (form.role.value === 'student');
@@ -480,8 +457,6 @@ export function wireSurveyForm(){
       if (response.ok) {
         if (linkToken) {
           thankYou.classList.remove('hidden');
-          // NEW: recenter after showing the modal in tablet mode
-          setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
           redirectOnThankYouClose = true;
           setTimeout(() => { window.location.replace('https://pythonsupport.dtu.dk/'); }, 7000);
         } else {
@@ -495,8 +470,6 @@ export function wireSurveyForm(){
           studentNumInput.value = '';
           studentNumInput.focus();
           document.activeElement?.blur();
-          // NEW: recenter after the reset so the card stays balanced
-          setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
           setTimeout(() => { thankYou.classList.add('hidden'); }, 3000);
         }
       } else {
@@ -537,9 +510,15 @@ export function wireSurveyForm(){
   // Re-center and keep the caret editable after choosing an option
   courseInput.addEventListener('change', () => {
     if (!document.body.classList.contains('kiosk-mode')) return;
+    // Keep focus & put caret at the end so it’s easy to edit
     courseInput.focus({ preventScroll: true });
     const len = courseInput.value.length;
     try { courseInput.setSelectionRange(len, len); } catch {}
+    // If in kiosk, ensure any outer focusout handlers don't snap to top; we re-center ourselves
+    if (document.body.classList.contains('kiosk-mode')) {
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 180);
+    }
+    // Center it (again) in case the keyboard changed layout
     setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 50);
   });
 
