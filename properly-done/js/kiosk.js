@@ -4,7 +4,7 @@ import { STORAGE, linkToken } from './config.js';
 // --- HARD KIOSK & WAKE LOCK SUPPORT ---
 // If true, users cannot exit via the 5‑tap corner or other soft exits,
 // and we will try to auto‑recover fullscreen/orientation/wake lock.
-const HARD_KIOSK = true;
+const HARD_KIOSK = false;
 
 // Screen Wake Lock (modern browsers) + NoSleep fallback (older iOS)
 let __wakeLock = null;
@@ -65,7 +65,7 @@ async function ensureFullscreen() {
 }
 
 async function ensureOrientation() {
-  try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait').catch(()=>{}); } catch {}
+  try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(()=>{}); } catch {}
 }
 
 function bindWakeLockWatchers() {
@@ -103,7 +103,8 @@ export function applyKiosk(state){
   if(state){
     document.body.classList.add('kiosk-mode');
     setViewportLock(true, 1.30); // 15% more than the 1.15 you asked before
-    try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); } catch {}
+    // lock to landscape
+    try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); } catch {}
     try { const el=document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(()=>{}); } catch {}
     window.scrollTo(0,0);
     // Keep the screen awake and auto-recover fullscreen/orientation
