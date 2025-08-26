@@ -1,4 +1,3 @@
-
 import { endpoint, STORAGE, state, linkToken, qpWD } from './config.js';
 import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
@@ -33,6 +32,22 @@ function enableKioskScrolling() {
   window.addEventListener('wheel', allowScroll, { capture: true, passive: true });
 
   __kioskScrollPatched = true;
+}
+
+// Center the survey card in the viewport (used on tablet mode open/close keyboard)
+function centerSurveyCard(smooth = true) {
+  const card = document.getElementById('surveyCard');
+  if (!card) return;
+  const behavior = smooth ? 'smooth' : 'auto';
+  try {
+    card.scrollIntoView({ block: 'center', inline: 'nearest', behavior });
+  } catch {
+    try {
+      const rect = card.getBoundingClientRect();
+      const top = window.scrollY + rect.top + rect.height / 2 - window.innerHeight / 2;
+      window.scrollTo({ top, behavior });
+    } catch {}
+  }
 }
 
 export async function verifyOneTimeToken() {
@@ -90,13 +105,30 @@ export function wireSurveyForm(){
 
   // Bring back scrolling when entering tablet (kiosk) mode
   enableKioskScrolling();
+
+  // If starting in kiosk, center the card once the layout settles
+  if (typeof inKiosk === 'function' && inKiosk()) {
+    setTimeout(() => centerSurveyCard(true), 150);
+  }
+
   // If tablet mode is toggled later, re-apply
   try {
     const __kioskClassWatcher = new MutationObserver(() => {
-      if (document.body.classList.contains('kiosk-mode')) enableKioskScrolling();
+      if (document.body.classList.contains('kiosk-mode')) {
+        enableKioskScrolling();
+        // Center after enabling scroll so the card is vertically balanced
+        setTimeout(() => centerSurveyCard(true), 150);
+      }
     });
     __kioskClassWatcher.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   } catch {}
+
+  // Re-center on viewport changes in kiosk mode (e.g., orientation or keyboard height changes)
+  window.addEventListener('resize', () => {
+    if (typeof inKiosk === 'function' && inKiosk()) {
+      setTimeout(() => centerSurveyCard(false), 200);
+    }
+  });
 
   const form = document.getElementById("surveyForm");
   const thankYou = document.getElementById("thankYouModal");
@@ -184,6 +216,12 @@ export function wireSurveyForm(){
         setTimeout(() => { try { inp.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 120);
       }
     });
+    inp.addEventListener('blur', () => {
+      if (inKiosk && typeof inKiosk === 'function' && inKiosk()) {
+        // Let the keyboard retract, then center the card
+        setTimeout(() => centerSurveyCard(true), 220);
+      }
+    });
   });
 
   // Tap anywhere outside inputs to dismiss the keyboard (tablet mode only)
@@ -196,6 +234,8 @@ export function wireSurveyForm(){
       const active = document.activeElement;
       if (active && active.matches && active.matches('input, textarea, select')) {
         try { active.blur(); } catch {}
+        // After dismissing, re-center the survey card
+        setTimeout(() => { if (inKiosk && typeof inKiosk === 'function' && inKiosk()) centerSurveyCard(true); }, 180);
       }
     }, { passive: true });
     window.__surveyTapToDismissAttached = true;
@@ -329,6 +369,13 @@ export function wireSurveyForm(){
   courseInput.addEventListener('focus', () => {
     if (document.body.classList.contains('kiosk-mode')) {
       setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 150);
+    }
+  });
+
+  // When leaving the field (keyboard hides), center the whole card again
+  courseInput.addEventListener('blur', () => {
+    if (document.body.classList.contains('kiosk-mode')) {
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
     }
   });
 })();
