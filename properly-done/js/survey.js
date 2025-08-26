@@ -84,7 +84,7 @@ function loadCourses() {
   })();
 }
 
-export function wireSurveyForm() {
+export function wireSurveyForm(){
   loadCourses();
   verifyOneTimeToken();
 
@@ -97,11 +97,6 @@ export function wireSurveyForm() {
     });
     __kioskClassWatcher.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   } catch {}
-
-  // Initialize the touch-friendly course suggestions (mobile/tablet)
-  initCourseTouchSuggestions();
-}
-(function () {
 
   const form = document.getElementById("surveyForm");
   const thankYou = document.getElementById("thankYouModal");
@@ -342,67 +337,3 @@ export function wireSurveyForm() {
 function inKiosk() {
   return document.body.classList.contains('kiosk-mode');
 }
-
-// Touch-friendly fallback for course suggestions on mobile/tablet
-function initCourseTouchSuggestions() {
-  // Prefer native datalist on desktop; enable custom list on coarse pointers (phones/tablets)
-  const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  if (!isCoarse) return;
-
-  const input = document.getElementById('course_number');
-  const dl    = document.getElementById('courses');
-  const box   = document.getElementById('courseSuggest');
-  if (!input || !dl || !box) return;
-
-  const MAX = 8;
-
-  function allOptions() {
-    return Array.from(dl.querySelectorAll('option')).map(o => o.value).filter(Boolean);
-  }
-
-  function hide() {
-    box.classList.add('hidden');
-  }
-
-  function render(items) {
-    box.innerHTML = '';
-    items.slice(0, MAX).forEach((val, idx) => {
-      const li = document.createElement('li');
-      li.textContent = val;
-      li.setAttribute('role', 'option');
-      li.tabIndex = 0;
-      li.addEventListener('mousedown', (e) => e.preventDefault()); // keep input focus
-      li.addEventListener('click', () => {
-        input.value = val;
-        hide();
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        try { input.blur(); } catch {}
-      });
-      li.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); li.click(); }
-      });
-      box.appendChild(li);
-    });
-    box.classList.toggle('hidden', box.childElementCount === 0);
-  }
-
-  function update() {
-    const q = (input.value || '').trim().toLowerCase();
-    const options = allOptions();
-    const matches = !q ? options.slice(0, MAX) : options.filter(v => v.toLowerCase().includes(q));
-    render(matches);
-  }
-
-  input.addEventListener('focus', () => { setTimeout(update, 50); });
-  input.addEventListener('input', update);
-  input.addEventListener('blur', () => { setTimeout(hide, 120); });
-
-  // Close with ESC
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
-
-  // If options populate later, refresh suggestions
-  try {
-    const mo = new MutationObserver(update);
-    mo.observe(dl, { childList: true });
-  } catch {}
-})();
