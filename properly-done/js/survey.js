@@ -3,6 +3,117 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
+/* === Touch/mobile course selector fallback (for tablets/phones) === */
+let __coursesData = [];
+function isTouchDevice(){
+  try { return ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0; } catch { return false; }
+}
+function ensureMobileAutocompleteStyles(){
+  if (document.getElementById('course-mobile-autocomplete-style')) return;
+  const css = `
+  .course-dd{position:absolute; z-index: 10050; background:#fff; border:1px solid #e5e7eb; border-radius:.5rem; box-shadow:0 10px 25px rgba(17,24,39,.12); max-height:40vh; overflow:auto; min-width:16rem;}
+  .course-dd.hidden{display:none;}
+  .course-dd ul{list-style:none; margin:0; padding:.25rem;}
+  .course-dd li{padding:.5rem .75rem; line-height:1.25rem; cursor:pointer; border-radius:.375rem;}
+  .course-dd li:hover, .course-dd li:active{background:#f3f4f6;}
+  .course-dd .empty{padding:.75rem; color:#6b7280;}
+  `;
+  const style = document.createElement('style');
+  style.id = 'course-mobile-autocomplete-style';
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+function attachMobileCourseAutocomplete(input){
+  if (!isTouchDevice()) return;             // Only on tablets/phones
+  if (input.__mobileAutocompleteBound) return;
+  input.__mobileAutocompleteBound = true;
+
+  ensureMobileAutocompleteStyles();
+
+  // Dropdown element
+  const dd = document.createElement('div');
+  dd.className = 'course-dd hidden';
+  dd.innerHTML = '<ul></ul>';
+  const list = dd.querySelector('ul');
+  document.body.appendChild(dd);
+
+  let open = false;
+  let lastQuery = '';
+
+  function positionDD(){
+    if (!open) return;
+    const r = input.getBoundingClientRect();
+    const top = (window.scrollY || window.pageYOffset) + r.bottom + 6;
+    const left = (window.scrollX || window.pageXOffset) + r.left;
+    dd.style.top = `${top}px`;
+    dd.style.left = `${left}px`;
+    dd.style.width = `${Math.max(r.width, 260)}px`;
+  }
+
+  function closeDD(){ if (!open) return; open = false; dd.classList.add('hidden'); }
+  function openDD(){ if (open) return; open = true; dd.classList.remove('hidden'); positionDD(); }
+
+  function render(items){
+    list.innerHTML = '';
+    if (!items.length){
+      const li = document.createElement('li'); li.className='empty'; li.textContent='No matches';
+      list.appendChild(li); return;
+    }
+    for (const row of items.slice(0, 12)){
+      const li = document.createElement('li');
+      li.textContent = row.value;
+      li.addEventListener('pointerdown', (e)=>{ e.preventDefault(); e.stopPropagation(); });
+      li.addEventListener('click', ()=>{
+        input.value = row.value;
+        try { input.dispatchEvent(new Event('input', {bubbles:true})); } catch {}
+        try { input.dispatchEvent(new Event('change', {bubbles:true})); } catch {}
+        closeDD();
+        // keep caret at end if keyboard is still up
+        try { input.focus({ preventScroll:true }); const L = input.value.length; input.setSelectionRange(L,L); } catch {}
+      });
+      list.appendChild(li);
+    }
+  }
+
+  function filterData(q){
+    const s = (q || '').toLowerCase();
+    if (!s) return __coursesData.slice(0, 20);
+    return __coursesData.filter(r => r.value.toLowerCase().includes(s)).slice(0, 50);
+  }
+
+  function update(){
+    const q = input.value;
+    if (q === lastQuery && open) { positionDD(); return; }
+    lastQuery = q;
+    const items = filterData(q);
+    render(items);
+    if (!open) openDD(); else positionDD();
+  }
+
+  // Open/update on focus & input
+  input.setAttribute('autocomplete','off');
+  input.addEventListener('focus', ()=>{
+    // If data not yet loaded, try again shortly
+    if (!__coursesData.length){ setTimeout(update, 120); } else { update(); }
+  });
+  input.addEventListener('input', update);
+
+  // Close on blur (allow click on an item to register first)
+  input.addEventListener('blur', ()=>{ setTimeout(closeDD, 120); });
+
+  // Reposition with viewport changes/scroll
+  window.addEventListener('resize', positionDD);
+  window.addEventListener('scroll', positionDD, { passive:true });
+
+  // Tap outside closes
+  document.addEventListener('pointerdown', (e)=>{
+    if (!open) return;
+    const t = e.target;
+    if (t === input || dd.contains(t)) return;
+    closeDD();
+  }, true);
+}
+
 // --- TEMP: allow scrolling in kiosk mode (undo hard lock) ---
 let __kioskScrollPatched = false;
 function enableKioskScrolling() {
@@ -91,6 +202,7 @@ function loadCourses() {
         rawName = rawName.replace(/\r/g, '').replace(/CR$/, '').replace(/^"+|"+$/g, '').trim();
         const opt = document.createElement('option');
         opt.value = `${code} - ${rawName}`;
+        __coursesData.push({ value: opt.value, code, name: rawName });
         dl.appendChild(opt);
       });
     } catch (err) {
@@ -353,6 +465,7 @@ export function wireSurveyForm(){
 (function () {
   const courseInput = document.getElementById('course_number');
   if (!courseInput) return;
+  try { attachMobileCourseAutocomplete(courseInput); } catch {}
 
   // Re-center and keep the caret editable after choosing an option
   courseInput.addEventListener('change', () => {
