@@ -149,7 +149,7 @@ function setupCourseAutocomplete() {
     const st = document.createElement('style');
     st.id = 'course-autocomplete-css';
     st.textContent = `
-      .course-autocomplete{position:absolute;z-index:1000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;}
+      .course-autocomplete{position:fixed;z-index:10000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;}
       .course-autocomplete .item{padding:.5rem .75rem;cursor:pointer;}
       .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#f3f4f6;}
       .course-autocomplete .item.disabled{opacity:.6;cursor:default}
@@ -171,25 +171,62 @@ function setupCourseAutocomplete() {
 
   function positionBox() {
     const r = input.getBoundingClientRect();
-    box.style.minWidth = Math.max(260, Math.floor(r.width)) + 'px';
-    box.style.left = Math.floor(r.left + window.scrollX) + 'px';
-    box.style.top = Math.floor(r.bottom + window.scrollY + 6) + 'px';
+
+    // Prepare for measurement
+    box.style.visibility = 'hidden';
+    box.style.display = 'block';
+
+    // Set width and horizontal position
+    const width = Math.max(260, Math.floor(r.width));
+    box.style.minWidth = width + 'px';
+    box.style.width = width + 'px';
+    box.style.left = Math.floor(r.left) + 'px';
+
+    // Compute available space above and cap height for comfort
+    const pad = 8;
+    const availableAbove = Math.max(0, r.top - pad);
+    const maxH = Math.floor(Math.min(availableAbove, window.innerHeight * 0.45));
+    box.style.maxHeight = (maxH > 0 ? maxH : 160) + 'px';
+
+    // Measure natural height (clamped by maxHeight)
+    const natural = Math.min(box.scrollHeight, maxH || box.scrollHeight);
+
+    // Place the dropdown just above the input; clamp to viewport top
+    let top = r.top - natural - 6;
+    if (top < pad) top = pad;
+
+    box.style.top = Math.floor(top) + 'px';
+
+    // Reveal
+    box.style.visibility = 'visible';
   }
 
-  function showBox() { positionBox(); box.style.display = 'block'; }
-  function hideBox() { box.style.display = 'none'; activeIndex = -1; }
+  function showBox() {
+    // Ensure content is measured then positioned
+    positionBox();
+    box.style.display = 'block';
+  }
+
+  function hideBox() {
+    box.style.display = 'none';
+    activeIndex = -1;
+  }
 
   function render(list) {
     results = list;
     if (!results.length) {
       box.innerHTML = `<div class="item disabled ui-keep-focus">No matches</div>`;
+      // Show above the input even for the empty state
       showBox();
+      // A second pass after layout settle (fonts/images) for accuracy
+      requestAnimationFrame(() => { if (box.style.display !== 'none') positionBox(); });
       return;
     }
     box.innerHTML = results.map((v,i)=>`<div class="item ui-keep-focus" data-i="${i}">${v}</div>`).join('');
     activeIndex = 0;
     highlight(activeIndex);
     showBox();
+    requestAnimationFrame(() => { if (box.style.display !== 'none') positionBox(); });
   }
 
   function highlight(i) {
