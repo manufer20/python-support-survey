@@ -50,26 +50,6 @@ function centerSurveyCard(smooth = true) {
   }
 }
 
-/** Check if the card is visually centred within a small tolerance */
-function isCardCentered(thresholdPx = 24) {
-  const card = document.getElementById('surveyCard');
-  if (!card) return true;
-  const r = card.getBoundingClientRect();
-  const yCenter = r.top + r.height / 2;
-  return Math.abs(yCenter - (window.innerHeight / 2)) <= thresholdPx;
-}
-
-/** Centre now, then verify after ~1s and centre again if something moved it */
-function recenterWithFallback(opts = {}) {
-  const { smooth = true, timeout = 1000 } = opts;
-  try { centerSurveyCard(smooth); } catch {}
-  setTimeout(() => {
-    if (!isCardCentered()) {
-      try { centerSurveyCard(true); } catch {}
-    }
-  }, timeout);
-}
-
 export async function verifyOneTimeToken() {
   if (!linkToken) return true;
   try {
@@ -172,13 +152,13 @@ function setupCourseAutocomplete() {
       .course-autocomplete{
         position:fixed;z-index:10000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;
         box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;
-        -webkit-overflow-scrolling: touch;
-        touch-action: pan-y;
-        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+        touch-action: pan-y;               /* allow vertical panning without triggering taps */
+        overscroll-behavior: contain;      /* keep page from stealing the scroll */
       }
       .course-autocomplete .item{
         padding:.5rem .75rem;cursor:pointer;
-        touch-action: manipulation;
+        touch-action: manipulation;        /* taps okay, avoid gesture side-effects */
       }
       .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#f3f4f6;}
       .course-autocomplete .item.disabled{opacity:.6;cursor:default}
@@ -231,6 +211,7 @@ function setupCourseAutocomplete() {
   }
 
   function showBox() {
+    // Ensure content is measured then positioned
     positionBox();
     box.style.display = 'block';
   }
@@ -244,7 +225,9 @@ function setupCourseAutocomplete() {
     results = list;
     if (!results.length) {
       box.innerHTML = `<div class="item disabled ui-keep-focus">No matches</div>`;
+      // Show above the input even for the empty state
       showBox();
+      // A second pass after layout settle (fonts/images) for accuracy
       requestAnimationFrame(() => { if (box.style.display !== 'none') positionBox(); });
       return;
     }
@@ -278,7 +261,7 @@ function setupCourseAutocomplete() {
     if (document.body.classList.contains('kiosk-mode')) {
       try { input.blur(); } catch {}
       // Re-center after the blur/keyboard animation finishes
-      setTimeout(() => { try { recenterWithFallback({ smooth:true, timeout:1000 }); } catch {} }, 220);
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
     }
   }
 
@@ -374,14 +357,14 @@ export function wireSurveyForm(){
       if (!(t && document.getElementById('surveyCard') && document.getElementById('surveyCard').contains(t))) return;
       try { e.stopImmediatePropagation(); e.stopPropagation(); } catch {}
       // After focus moves (e.g., closing keyboard or picking a course), re-center the card
-      setTimeout(() => { try { recenterWithFallback({ smooth:true, timeout:1000 }); } catch {} }, 180);
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 180);
     }, { capture: true });
     window.__kioskFocusoutInterceptorAttached = true;
   }
 
   // If starting in kiosk, center the card once the layout settles
   if (typeof inKiosk === 'function' && inKiosk()) {
-    setTimeout(() => recenterWithFallback({ smooth:true, timeout:1000 }), 150);
+    setTimeout(() => centerSurveyCard(true), 150);
   }
 
   // If tablet mode is toggled later, re-apply
@@ -390,7 +373,7 @@ export function wireSurveyForm(){
       if (document.body.classList.contains('kiosk-mode')) {
         enableKioskScrolling();
         // Center after enabling scroll so the card is vertically balanced
-        setTimeout(() => recenterWithFallback({ smooth:true, timeout:1000 }), 150);
+        setTimeout(() => centerSurveyCard(true), 150);
       }
     });
     __kioskClassWatcher.observe(document.body, { attributes: true, attributeFilter: ['class'] });
@@ -399,7 +382,7 @@ export function wireSurveyForm(){
   // Re-center on viewport changes in kiosk mode (e.g., orientation or keyboard height changes)
   window.addEventListener('resize', () => {
     if (typeof inKiosk === 'function' && inKiosk()) {
-      setTimeout(() => recenterWithFallback({ smooth:false, timeout:800 }), 200);
+      setTimeout(() => centerSurveyCard(false), 200);
     }
   });
 
@@ -492,7 +475,7 @@ export function wireSurveyForm(){
     inp.addEventListener('blur', () => {
       if (inKiosk && typeof inKiosk === 'function' && inKiosk()) {
         // Let the keyboard retract, then center the card
-        setTimeout(() => recenterWithFallback({ smooth:true, timeout:1000 }), 220);
+        setTimeout(() => centerSurveyCard(true), 220);
       }
     });
   });
@@ -508,7 +491,7 @@ export function wireSurveyForm(){
       if (active && active.matches && active.matches('input, textarea, select')) {
         try { active.blur(); } catch {}
         // After dismissing, re-center the survey card
-        setTimeout(() => { if (inKiosk && typeof inKiosk === 'function' && inKiosk()) recenterWithFallback({ smooth:true, timeout:1000 }); }, 180);
+        setTimeout(() => { if (inKiosk && typeof inKiosk === 'function' && inKiosk()) centerSurveyCard(true); }, 180);
       }
     }, { passive: true });
     window.__surveyTapToDismissAttached = true;
@@ -535,6 +518,7 @@ export function wireSurveyForm(){
   }
   form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', toggleRole));
   toggleRole();
+
 
   function setStudentCustomValidation() {
     const isStudent = (form.role.value === 'student');
@@ -635,7 +619,7 @@ export function wireSurveyForm(){
     try { courseInput.setSelectionRange(len, len); } catch {}
     // If in kiosk, ensure any outer focusout handlers don't snap to top; we re-center ourselves
     if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => { try { recenterWithFallback({ smooth:true, timeout:1000 }); } catch {} }, 180);
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 180);
     }
     // Center it (again) in case the keyboard changed layout
     setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 50);
@@ -651,7 +635,7 @@ export function wireSurveyForm(){
   // When leaving the field (keyboard hides), center the whole card again
   courseInput.addEventListener('blur', () => {
     if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => { try { recenterWithFallback({ smooth:true, timeout:1000 }); } catch {} }, 220);
+      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
     }
   });
 })();
