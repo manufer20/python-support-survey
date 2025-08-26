@@ -251,18 +251,19 @@ function setupCourseAutocomplete() {
     input.dispatchEvent(new Event('input', { bubbles:true }));
     input.dispatchEvent(new Event('change', { bubbles:true }));
     hideBox();
-    // Keep caret at end for quick edits
+    // Keep focus and caret so users can keep editing immediately (no blur)
     try {
       input.focus({ preventScroll: true });
       const len = input.value.length;
       input.setSelectionRange(len, len);
     } catch {}
-    // On touch devices in kiosk mode, blur to close the keyboard and suppress kiosk focusout auto-scroll
-    if (document.body.classList.contains('kiosk-mode')) {
-      try { input.blur(); } catch {}
-      // Re-center after the blur/keyboard animation finishes
-      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
-    }
+    // Smoothly re-center the field (and the card in kiosk) without dismissing the keyboard
+    setTimeout(() => {
+      try { input.scrollIntoView({ block:'center', inline:'nearest', behavior:'smooth' }); } catch {}
+      if (document.body.classList.contains('kiosk-mode')) {
+        setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 120);
+      }
+    }, 60);
   }
 
   function filterNow() {
