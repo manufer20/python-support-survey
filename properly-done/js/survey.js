@@ -3,36 +3,6 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
-// --- TEMP: allow scrolling in kiosk mode (undo hard lock) ---
-let __kioskScrollPatched = false;
-function enableKioskScrolling() {
-  if (__kioskScrollPatched) return;
-  if (!document.body || !document.body.classList.contains('kiosk-mode')) return;
-
-  // Override CSS locks with inline styles
-  try {
-    document.documentElement.style.overflow = 'auto';
-    document.body.style.overflow = 'auto';
-    document.body.style.position = 'static';
-    document.body.style.inset = 'auto';
-    document.body.style.height = 'auto';
-    document.body.style.width = 'auto';
-    const mw = document.getElementById('mainWrapper');
-    if (mw) { mw.style.height = 'auto'; mw.style.overflow = 'auto'; }
-  } catch {}
-
-  // Neutralize global preventDefault handlers from kiosk.js
-  const allowScroll = (e) => {
-    if (document.body.classList.contains('kiosk-mode')) {
-      // Stop the blocking handler from firing
-      try { e.stopImmediatePropagation(); } catch {}
-    }
-  };
-  window.addEventListener('touchmove', allowScroll, { capture: true, passive: true });
-  window.addEventListener('wheel', allowScroll, { capture: true, passive: true });
-
-  __kioskScrollPatched = true;
-}
 
 // Center the survey card in the viewport (used on tablet mode open/close keyboard)
 function centerSurveyCard(smooth = true) {
@@ -345,23 +315,6 @@ export function wireSurveyForm(){
     try { setupCourseAutocomplete(); } catch (e) { console.error('autocomplete init failed', e); }
   });
 
-  // Bring back scrolling when entering tablet (kiosk) mode
-  enableKioskScrolling();
-
-  // Intercept focusout in kiosk mode to prevent global handlers from forcing scrollTop=0
-  if (!window.__kioskFocusoutInterceptorAttached) {
-    document.addEventListener('focusout', (e) => {
-      if (!document.body.classList.contains('kiosk-mode')) return;
-      const t = e.target;
-      // Only intercept events that originate within the survey card (avoid modal/login side effects)
-      if (!(t && document.getElementById('surveyCard') && document.getElementById('surveyCard').contains(t))) return;
-      try { e.stopImmediatePropagation(); e.stopPropagation(); } catch {}
-      // After focus moves (e.g., closing keyboard or picking a course), re-center the card
-      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 180);
-    }, { capture: true });
-    window.__kioskFocusoutInterceptorAttached = true;
-  }
-
   // If starting in kiosk, center the card once the layout settles
   if (typeof inKiosk === 'function' && inKiosk()) {
     setTimeout(() => centerSurveyCard(true), 150);
@@ -371,8 +324,6 @@ export function wireSurveyForm(){
   try {
     const __kioskClassWatcher = new MutationObserver(() => {
       if (document.body.classList.contains('kiosk-mode')) {
-        enableKioskScrolling();
-        // Center after enabling scroll so the card is vertically balanced
         setTimeout(() => centerSurveyCard(true), 150);
       }
     });
@@ -564,6 +515,7 @@ export function wireSurveyForm(){
           setTimeout(() => { window.location.replace('https://pythonsupport.dtu.dk/'); }, 7000);
         } else {
           thankYou.classList.remove('hidden');
+          if (document.body.classList.contains('kiosk-mode')) { setTimeout(() => centerSurveyCard(true), 220); }
           form.reset();
           form.role.value = 'student';
           toggleRole();
@@ -573,7 +525,10 @@ export function wireSurveyForm(){
           studentNumInput.value = '';
           studentNumInput.focus();
           document.activeElement?.blur();
-          setTimeout(() => { thankYou.classList.add('hidden'); }, 3000);
+          setTimeout(() => { 
+            thankYou.classList.add('hidden'); 
+            if (document.body.classList.contains('kiosk-mode')) { centerSurveyCard(true); }
+          }, 3000);
         }
       } else {
         let raw = '';
