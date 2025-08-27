@@ -3,40 +3,6 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
-// --- cross-browser scroll helpers (Android/Samsung safe) ---
-function getScrollTop() {
-  try {
-    if (document.scrollingElement && typeof document.scrollingElement.scrollTop === 'number') {
-      return document.scrollingElement.scrollTop;
-    }
-  } catch {}
-  return window.pageYOffset ?? document.documentElement.scrollTop ?? document.body.scrollTop ?? 0;
-}
-function setScrollTop(y) {
-  try {
-    if (document.scrollingElement) document.scrollingElement.scrollTop = y;
-    document.documentElement.scrollTop = y;
-    document.body.scrollTop = y;
-    // Some Android builds only honor window.scrollTo:
-    window.scrollTo(0, y);
-  } catch {}
-}
-// Temporarily disable smooth scrolling so restoring the scroll position is immediate
-function withNoSmoothScroll(fn) {
-  const id = 'tmp-no-smooth';
-  let tag = document.getElementById(id);
-  let added = false;
-  if (!tag) {
-    tag = document.createElement('style');
-    tag.id = id;
-    tag.textContent = 'html,body{scroll-behavior:auto !important;}';
-    document.head.appendChild(tag);
-    added = true;
-  }
-  try { fn(); } finally {
-    if (added) requestAnimationFrame(() => { try { tag.remove(); } catch {} });
-  }
-}
 
 // Center the survey card in the viewport (used on tablet mode open/close keyboard)
 function centerSurveyCard(smooth = true) {
@@ -44,33 +10,31 @@ function centerSurveyCard(smooth = true) {
   if (!card) return;
   const behavior = smooth ? 'smooth' : 'auto';
   try {
+    // Compute a stable center using the scrollingElement to avoid other listeners (like kiosk focusout) fighting us.
     const rect = card.getBoundingClientRect();
-    const currentTop = getScrollTop();
-    const targetTop  = Math.max(0, Math.floor(currentTop + rect.top + (rect.height / 2) - (window.innerHeight / 2)));
-    if (behavior === 'auto') {
-      withNoSmoothScroll(() => setScrollTop(targetTop));
-    } else {
-      const sc = document.scrollingElement || document.documentElement;
-      sc.scrollTo({ top: targetTop, behavior: 'smooth' });
-    }
+    const scrollEl = document.scrollingElement || document.documentElement;
+    const currentTop = (scrollEl.scrollTop ?? window.pageYOffset ?? 0);
+    const targetTop  = currentTop + rect.top + (rect.height / 2) - (window.innerHeight / 2);
+    scrollEl.scrollTo({ top: Math.max(0, Math.floor(targetTop)), behavior });
   } catch {
     try { card.scrollIntoView({ block: 'center', inline: 'nearest', behavior }); } catch {}
   }
 }
 
 // After a pick/blur on mobile, guard against Samsung/Android jump-to-top and re-center
-function recenterAfterPick(delay = 300, guardMs = 1500) {
+function recenterAfterPick(delay = 260, guardMs = 1200) {
   try {
-    const before = getScrollTop();
+    const sc = document.scrollingElement || document.documentElement;
+    const before = sc ? sc.scrollTop : 0;
 
     // Guard for a short period: if the browser jumps upward, immediately restore.
     let rafId = 0;
     const endAt = performance.now() + guardMs;
     const guard = () => {
+      // Only act while in kiosk (tablet) mode
       if (!document.body.classList.contains('kiosk-mode')) return;
       try {
-        const cur = getScrollTop();
-        if (cur + 5 < before) withNoSmoothScroll(() => setScrollTop(before));
+        if ((sc.scrollTop || 0) + 5 < before) sc.scrollTop = before;
       } catch {}
       if (performance.now() < endAt) { rafId = requestAnimationFrame(guard); }
     };
@@ -79,8 +43,7 @@ function recenterAfterPick(delay = 300, guardMs = 1500) {
     // Final re-center after keyboard/UI settles
     setTimeout(() => {
       try {
-        const cur = getScrollTop();
-        if (cur + 5 < before) withNoSmoothScroll(() => setScrollTop(before));
+        if ((sc.scrollTop || 0) + 5 < before) sc.scrollTop = before;
         centerSurveyCard(true);
       } catch {}
       cancelAnimationFrame(rafId);
@@ -292,7 +255,7 @@ function setupCourseAutocomplete() {
     // Desktop keeps caret; kiosk avoids refocus jank and recenters robustly
     if (document.body.classList.contains('kiosk-mode')) {
       try { input.blur(); } catch {}
-      recenterAfterPick(320, 1600);
+      recenterAfterPick(240);
     } else {
       try {
         input.focus({ preventScroll: true });

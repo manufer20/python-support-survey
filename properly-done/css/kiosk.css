@@ -4,7 +4,6 @@
 .kiosk-mode #sidebarOverlay,
 .kiosk-mode #buildingSelectionPage,
 .kiosk-mode #analyticsPage { display:none !important; }
-
 html.kiosk-mode, body.kiosk-mode { scroll-behavior: auto !important; }
 html.kiosk-mode, body.kiosk-mode { height:auto; overflow:auto; }
 body.kiosk-mode{ position:static; inset:auto; height:auto; width:auto; overscroll-behavior:contain; }
