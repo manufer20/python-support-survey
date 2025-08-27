@@ -13,23 +13,40 @@ function centerSurveyCard(smooth = true) {
     // Compute a stable center using the scrollingElement to avoid other listeners (like kiosk focusout) fighting us.
     const rect = card.getBoundingClientRect();
     const scrollEl = document.scrollingElement || document.documentElement;
-    const targetTop = (window.scrollY || scrollEl.scrollTop || 0) + rect.top + (rect.height / 2) - (window.innerHeight / 2);
-    scrollEl.scrollTo({ top: Math.max(0, targetTop), behavior });
+    const currentTop = (scrollEl.scrollTop ?? window.pageYOffset ?? 0);
+    const targetTop  = currentTop + rect.top + (rect.height / 2) - (window.innerHeight / 2);
+    scrollEl.scrollTo({ top: Math.max(0, Math.floor(targetTop)), behavior });
   } catch {
     try { card.scrollIntoView({ block: 'center', inline: 'nearest', behavior }); } catch {}
   }
 }
 
-// After a pick/blur on mobile Safari, restore previous scroll and re-center
-function recenterAfterPick(delay = 220) {
+// After a pick/blur on mobile, guard against Samsung/Android jump-to-top and re-center
+function recenterAfterPick(delay = 260, guardMs = 1200) {
   try {
     const sc = document.scrollingElement || document.documentElement;
     const before = sc ? sc.scrollTop : 0;
+
+    // Guard for a short period: if the browser jumps upward, immediately restore.
+    let rafId = 0;
+    const endAt = performance.now() + guardMs;
+    const guard = () => {
+      // Only act while in kiosk (tablet) mode
+      if (!document.body.classList.contains('kiosk-mode')) return;
+      try {
+        if ((sc.scrollTop || 0) + 5 < before) sc.scrollTop = before;
+      } catch {}
+      if (performance.now() < endAt) { rafId = requestAnimationFrame(guard); }
+    };
+    rafId = requestAnimationFrame(guard);
+
+    // Final re-center after keyboard/UI settles
     setTimeout(() => {
       try {
-        if (sc && Math.abs((sc.scrollTop || 0) - before) > 8) sc.scrollTop = before;
+        if ((sc.scrollTop || 0) + 5 < before) sc.scrollTop = before;
         centerSurveyCard(true);
       } catch {}
+      cancelAnimationFrame(rafId);
     }, delay);
   } catch {}
 }
@@ -324,6 +341,7 @@ function setupCourseAutocomplete() {
 export function wireSurveyForm(){
   loadCourses();
   verifyOneTimeToken();
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch {}
   onCoursesReady(() => {
     try { setupCourseAutocomplete(); } catch (e) { console.error('autocomplete init failed', e); }
   });
