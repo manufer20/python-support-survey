@@ -234,7 +234,9 @@ export function wireSurveyForm(){
           setTimeout(() => { window.location.replace('https://pythonsupport.dtu.dk/'); }, 7000);
         } else {
           thankYou.classList.remove('hidden');
-          if (document.body.classList.contains('kiosk-mode')) { setTimeout(() => centerSurveyCard(true), 220); }
+          // Avoid immediate re-centering while the thank-you overlay animates; it causes a brief jump.
+          // We'll do a single final center when the overlay hides.
+
           form.reset();
           form.role.value = 'student';
           toggleRole();
@@ -242,10 +244,18 @@ export function wireSurveyForm(){
           document.getElementById('workshop_yes').checked = !!preferWD;
           document.getElementById('workshop_no').checked  = !preferWD;
           studentNumInput.value = '';
-          studentNumInput.focus();
-          document.activeElement?.blur();
-          setTimeout(() => { 
-            thankYou.classList.add('hidden'); 
+
+          // Prevent the post-submit focus/blur from causing a visible scroll jump:
+          // - In kiosk (tablet) mode: do NOT refocus the input (keeps keyboard closed & avoids auto-scroll).
+          // - On desktop: focus without scrolling so supporters can keep typing quickly.
+          if (document.body.classList.contains('kiosk-mode')) {
+            try { document.activeElement?.blur(); } catch {}
+          } else {
+            try { studentNumInput.focus({ preventScroll: true }); } catch {}
+          }
+
+          setTimeout(() => {
+            thankYou.classList.add('hidden');
             if (document.body.classList.contains('kiosk-mode')) { centerSurveyCard(true); }
           }, 3000);
         }
