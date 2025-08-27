@@ -3,14 +3,13 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
-
 // Center the survey card in the viewport (used on tablet mode open/close keyboard)
 function centerSurveyCard(smooth = true) {
   const card = document.getElementById('surveyCard');
   if (!card) return;
   const behavior = smooth ? 'smooth' : 'auto';
   try {
-    // Compute a stable center using the scrollingElement to avoid other listeners (like kiosk focusout) fighting us.
+    // Compute a stable center using the scrollingElement to avoid other listeners fighting us.
     const rect = card.getBoundingClientRect();
     const scrollEl = document.scrollingElement || document.documentElement;
     const currentTop = (scrollEl.scrollTop ?? window.pageYOffset ?? 0);
@@ -20,7 +19,6 @@ function centerSurveyCard(smooth = true) {
     try { card.scrollIntoView({ block: 'center', inline: 'nearest', behavior }); } catch {}
   }
 }
-
 
 export async function verifyOneTimeToken() {
   if (!linkToken) return true;
@@ -40,285 +38,16 @@ export async function verifyOneTimeToken() {
   } catch { return true; }
 }
 
-function loadCourses() {
-  (async () => {
-    try {
-      const res = await fetch('./data/courses.csv');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const csv = await res.text();
-      const lines = csv.split('\n');
-      const records = [];
-      let buffer = '', inQuotes = false;
-      lines.forEach(line => {
-        const quoteCount = (line.match(/"/g) || []).length;
-        if (!inQuotes) { buffer = line; if (quoteCount % 2 !== 0) inQuotes = true; else records.push(buffer); }
-        else { buffer += '\n' + line; if (quoteCount % 2 !== 0) { inQuotes = false; records.push(buffer); } }
-      });
-      // Remove header
-      if (records.length && records[0].toLowerCase().includes('course')) { records.shift(); }
-
-      const options = [];
-      records.forEach(record => {
-        const idx = record.indexOf(',');
-        if (idx === -1) return;
-        const code = record.slice(0, idx).trim();
-        let rawName = record.slice(idx + 1);
-        rawName = rawName.replace(/\r/g, '').replace(/CR$/, '').replace(/^"+|"+$/g, '').trim();
-        if (!code || !rawName) return;
-        options.push(`${code} - ${rawName}`);
-      });
-
-      // Expose for JS autocomplete and also populate datalist for desktop
-      window.__COURSE_OPTIONS = options;
-
-      const dl = document.getElementById('courses');
-      if (dl) {
-        dl.innerHTML = '';
-        options.forEach(v => {
-          const opt = document.createElement('option');
-          opt.value = v;
-          dl.appendChild(opt);
-        });
-      }
-      // Announce readiness
-      document.dispatchEvent(new CustomEvent('courses:ready'));
-    } catch (err) {
-      console.error('Error loading courses.csv:', err);
-    }
-  })();
-}
-
-let __courseAutoOnce = false;
-
-function isTouchDevice() {
-  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
-}
-
-function onCoursesReady(cb) {
-  if (Array.isArray(window.__COURSE_OPTIONS) && window.__COURSE_OPTIONS.length) {
-    cb();
-    return;
-  }
-  const handler = () => { document.removeEventListener('courses:ready', handler); cb(); };
-  document.addEventListener('courses:ready', handler);
-}
-
-function setupCourseAutocomplete() {
-  if (__courseAutoOnce) return;
-  __courseAutoOnce = true;
-
-  const input = document.getElementById('course_number');
-  if (!input) return;
-
-  // Only apply on touch devices (desktop keeps native datalist UX)
-  if (!isTouchDevice()) return;
-
-  // So iOS/Android don't try to show native dropdown simultaneously
-  try { input.setAttribute('autocomplete', 'off'); } catch {}
-
-  // Inject minimal CSS once
-  if (!document.getElementById('course-autocomplete-css')) {
-    const st = document.createElement('style');
-    st.id = 'course-autocomplete-css';
-    st.textContent = `
-      .course-autocomplete{
-        position:fixed;z-index:10000;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;
-        box-shadow:0 10px 25px rgba(17,24,39,.12);max-height:40vh;overflow:auto;display:none;
-        -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
-        touch-action: pan-y;               /* allow vertical panning without triggering taps */
-        overscroll-behavior: contain;      /* keep page from stealing the scroll */
-      }
-      .course-autocomplete .item{
-        padding:.5rem .75rem;cursor:pointer;
-        touch-action: manipulation;        /* taps okay, avoid gesture side-effects */
-      }
-      .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#f3f4f6;}
-      .course-autocomplete .item.disabled{opacity:.6;cursor:default}
-      @media (prefers-color-scheme: dark){
-        .course-autocomplete{background:#111827;color:#e5e7eb;border-color:#374151}
-        .course-autocomplete .item:hover,.course-autocomplete .item.active{background:#1f2937}
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
-  // Create dropdown container in body so it can overlay properly
-  const box = document.createElement('div');
-  box.className = 'course-autocomplete ui-keep-focus';
-  document.body.appendChild(box);
-
-  let results = [];
-  let activeIndex = -1;
-
-  function positionBox() {
-    const r = input.getBoundingClientRect();
-
-    // Prepare for measurement
-    box.style.visibility = 'hidden';
-    box.style.display = 'block';
-
-    // Set width and horizontal position
-    const width = Math.max(260, Math.floor(r.width));
-    box.style.minWidth = width + 'px';
-    box.style.width = width + 'px';
-    box.style.left = Math.floor(r.left) + 'px';
-
-    // Compute available space above and cap height for comfort
-    const pad = 8;
-    const availableAbove = Math.max(0, r.top - pad);
-    const maxH = Math.floor(Math.min(availableAbove, window.innerHeight * 0.45));
-    box.style.maxHeight = (maxH > 0 ? maxH : 160) + 'px';
-
-    // Measure natural height (clamped by maxHeight)
-    const natural = Math.min(box.scrollHeight, maxH || box.scrollHeight);
-
-    // Place the dropdown just above the input; clamp to viewport top
-    let top = r.top - natural - 6;
-    if (top < pad) top = pad;
-
-    box.style.top = Math.floor(top) + 'px';
-
-    // Reveal
-    box.style.visibility = 'visible';
-  }
-
-  function showBox() {
-    // Ensure content is measured then positioned
-    positionBox();
-    box.style.display = 'block';
-  }
-
-  function hideBox() {
-    box.style.display = 'none';
-    activeIndex = -1;
-  }
-
-  function render(list) {
-    results = list;
-    if (!results.length) {
-      box.innerHTML = `<div class="item disabled ui-keep-focus">No matches</div>`;
-      // Show above the input even for the empty state
-      showBox();
-      // A second pass after layout settle (fonts/images) for accuracy
-      requestAnimationFrame(() => { if (box.style.display !== 'none') positionBox(); });
-      return;
-    }
-    box.innerHTML = results.map((v,i)=>`<div class="item ui-keep-focus" data-i="${i}">${v}</div>`).join('');
-    activeIndex = 0;
-    highlight(activeIndex);
-    showBox();
-    requestAnimationFrame(() => { if (box.style.display !== 'none') positionBox(); });
-  }
-
-  function highlight(i) {
-    Array.from(box.querySelectorAll('.item')).forEach(el => el.classList.remove('active'));
-    const el = box.querySelector(`.item[data-i="${i}"]`);
-    if (el) el.classList.add('active');
-  }
-
-  function pick(i) {
-    const v = results[i];
-    if (!v) return;
-    input.value = v;
-    input.dispatchEvent(new Event('input', { bubbles:true }));
-    input.dispatchEvent(new Event('change', { bubbles:true }));
-    hideBox();
-    // Keep caret at the end so the user can tweak the value if needed
-    try {
-      input.focus({ preventScroll: true });
-      const len = input.value.length;
-      input.setSelectionRange(len, len);
-    } catch {}
-  }
-
-  function filterNow() {
-    const q = (input.value || '').toLowerCase().trim();
-    const all = Array.isArray(window.__COURSE_OPTIONS) ? window.__COURSE_OPTIONS : [];
-    const list = !q ? all.slice(0, 10)
-                    : all.filter(v => v.toLowerCase().includes(q)).slice(0, 10);
-    render(list);
-  }
-
-  input.addEventListener('focus', () => { filterNow(); });
-  input.addEventListener('input', () => { filterNow(); });
-  input.addEventListener('keydown', (e) => {
-    if (box.style.display === 'none') return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); if (activeIndex < results.length - 1) { activeIndex++; highlight(activeIndex); } }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); if (activeIndex > 0) { activeIndex--; highlight(activeIndex); } }
-    else if (e.key === 'Enter') { e.preventDefault(); if (activeIndex >= 0) pick(activeIndex); }
-    else if (e.key === 'Escape') { e.preventDefault(); hideBox(); }
-  });
-
-  // Touch-friendly: only pick on a TAP (no significant movement). Allow vertical scrolling without selecting.
-  let tap = { down:false, moved:false, x:0, y:0, id:null };
-  const MOVE_THRESH = 8; // px
-
-  box.addEventListener('pointerdown', (e) => {
-    // Start tracking only if the press is on an item
-    const it = e.target.closest('.item');
-    tap.down = !!it && !it.classList.contains('disabled');
-    tap.moved = false;
-    tap.id = e.pointerId;
-    tap.x = e.clientX;
-    tap.y = e.clientY;
-  }, { passive: true });
-
-  box.addEventListener('pointermove', (e) => {
-    if (!tap.down) return;
-    const dx = Math.abs((e.clientX ?? 0) - tap.x);
-    const dy = Math.abs((e.clientY ?? 0) - tap.y);
-    if (dx > MOVE_THRESH || dy > MOVE_THRESH) tap.moved = true; // treat as scroll/drag
-  }, { passive: true });
-
-  function endTap(e){
-    if (!tap.down) return;
-    const wasTap = !tap.moved;
-    tap.down = false;
-    if (!wasTap) return;
-    const it = e.target.closest('.item');
-    if (!it || it.classList.contains('disabled')) return;
-    const i = Number(it.getAttribute('data-i'));
-    pick(i);
-  }
-  box.addEventListener('pointerup', endTap, { passive: true });
-  box.addEventListener('pointercancel', () => { tap.down = false; }, { passive: true });
-
-  // Mouse support (desktop) — normal clicks still pick.
-  box.addEventListener('click', (e) => {
-    const it = e.target.closest('.item');
-    if (!it || it.classList.contains('disabled')) return;
-    const i = Number(it.getAttribute('data-i'));
-    pick(i);
-  });
-
-  // Hide when tapping outside
-  document.addEventListener('pointerdown', (e) => {
-    const t = e.target;
-    if (t === input || box.contains(t)) return;
-    hideBox();
-  });
-
-  // Keep box positioned on scroll/resize (important for kiosk)
-  ['scroll','resize','orientationchange'].forEach(evt => {
-    window.addEventListener(evt, () => { if (box.style.display !== 'none') positionBox(); }, { passive:true });
-  });
-}
-
 export function wireSurveyForm(){
-  loadCourses();
   verifyOneTimeToken();
   try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch {}
-  onCoursesReady(() => {
-    try { setupCourseAutocomplete(); } catch (e) { console.error('autocomplete init failed', e); }
-  });
-
 
   // If starting in kiosk, center the card once the layout settles
   if (typeof inKiosk === 'function' && inKiosk()) {
     setTimeout(() => centerSurveyCard(true), 150);
   }
 
-  // If tablet mode is toggled later, re-apply
+  // If tablet mode is toggled later, re-center
   try {
     const __kioskClassWatcher = new MutationObserver(() => {
       if (document.body.classList.contains('kiosk-mode')) {
@@ -369,7 +98,6 @@ export function wireSurveyForm(){
   if (studentNumInput) {
     // Block non-digits before they land
     studentNumInput.addEventListener('beforeinput', (e) => {
-      // Allow deletions/moves
       const t = e.inputType || '';
       if (t.startsWith('delete') || t.startsWith('history') || t.includes('format')) return;
       const data = (e.data ?? '');
@@ -392,7 +120,6 @@ export function wireSurveyForm(){
       const v = studentNumInput.value;
       const next = (v.slice(0, start) + cleaned + v.slice(end)).replace(/\D/g, '').slice(0, 6);
       studentNumInput.value = next;
-      // Trigger validation UI
       studentNumInput.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
@@ -401,13 +128,11 @@ export function wireSurveyForm(){
       const allowedKeys = new Set(['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab']);
       const isDigit = (e.key && /^[0-9]$/.test(e.key)) || (e.code && /^Numpad[0-9]$/.test(e.code));
       if (e.key === 'Enter') {
-        // Enter/Next moves to satisfaction
         e.preventDefault();
         jumpToSatisfaction();
         return;
       }
       if (allowedKeys.has(e.key) || isDigit) return;
-      // Allow shortcuts like Cmd/Ctrl+A/C/V/X
       if ((e.ctrlKey || e.metaKey) && ['a','c','v','x','A','C','V','X'].includes(e.key)) return;
       e.preventDefault();
     });
@@ -423,7 +148,6 @@ export function wireSurveyForm(){
     });
     inp.addEventListener('blur', () => {
       if (inKiosk && typeof inKiosk === 'function' && inKiosk()) {
-        // Let the keyboard retract, then center the card
         setTimeout(() => centerSurveyCard(true), 220);
       }
     });
@@ -434,12 +158,10 @@ export function wireSurveyForm(){
     document.addEventListener('pointerdown', (e) => {
       if (!(inKiosk && typeof inKiosk === 'function' && inKiosk())) return;
       const t = e.target;
-      // Keep focus if tapping an input/select/textarea/datalist or their UI
       if (t && (t.closest('input, textarea, select, datalist, .ui-keep-focus'))) return;
       const active = document.activeElement;
       if (active && active.matches && active.matches('input, textarea, select')) {
         try { active.blur(); } catch {}
-        // After dismissing, re-center the survey card
         setTimeout(() => { if (inKiosk && typeof inKiosk === 'function' && inKiosk()) centerSurveyCard(true); }, 180);
       }
     }, { passive: true });
@@ -467,7 +189,6 @@ export function wireSurveyForm(){
   }
   form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', toggleRole));
   toggleRole();
-
 
   function setStudentCustomValidation() {
     const isStudent = (form.role.value === 'student');
@@ -558,30 +279,6 @@ export function wireSurveyForm(){
     else thankYou.classList.add('hidden');
   });
 }
-
-(function () {
-  const courseInput = document.getElementById('course_number');
-  if (!courseInput) return;
-
-  // Helper: does current value exactly match a known course option?
-  function isExactCourseMatch(val) {
-    const v = String(val || '').trim();
-    if (!v) return false;
-
-    // Check datalist options if present
-    const dl = document.getElementById('courses');
-    if (dl) {
-      const opts = Array.from(dl.querySelectorAll('option')).map(o => o.value);
-      if (opts.includes(v)) return true;
-    }
-    // Check JS-loaded options (mobile autocomplete)
-    if (Array.isArray(window.__COURSE_OPTIONS)) {
-      if (window.__COURSE_OPTIONS.includes(v)) return true;
-    }
-    return false;
-  }
-})();
-
 
 function inKiosk() {
   return document.body.classList.contains('kiosk-mode');
