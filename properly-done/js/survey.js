@@ -610,19 +610,41 @@ export function wireSurveyForm(){
   const courseInput = document.getElementById('course_number');
   if (!courseInput) return;
 
+  // Helper: does current value exactly match a known course option?
+  function isExactCourseMatch(val) {
+    const v = String(val || '').trim();
+    if (!v) return false;
+
+    // Check datalist options if present
+    const dl = document.getElementById('courses');
+    if (dl) {
+      const opts = Array.from(dl.querySelectorAll('option')).map(o => o.value);
+      if (opts.includes(v)) return true;
+    }
+    // Check JS-loaded options (mobile autocomplete)
+    if (Array.isArray(window.__COURSE_OPTIONS)) {
+      if (window.__COURSE_OPTIONS.includes(v)) return true;
+    }
+    return false;
+  }
+
+  // On touch/datalist flows some browsers only fire 'input'. If the value equals an option, treat it as a pick.
+  courseInput.addEventListener('input', () => {
+    if (!document.body.classList.contains('kiosk-mode')) return;
+    if (!isExactCourseMatch(courseInput.value)) return;
+
+    // Consider it selected: blur to close keyboard, then center the card
+    try { courseInput.blur(); } catch {}
+    setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
+  });
+
   // Re-center and keep the caret editable after choosing an option
   courseInput.addEventListener('change', () => {
     if (!document.body.classList.contains('kiosk-mode')) return;
-    // Keep focus & put caret at the end so it’s easy to edit
-    courseInput.focus({ preventScroll: true });
-    const len = courseInput.value.length;
-    try { courseInput.setSelectionRange(len, len); } catch {}
-    // If in kiosk, ensure any outer focusout handlers don't snap to top; we re-center ourselves
-    if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 180);
-    }
-    // Center it (again) in case the keyboard changed layout
-    setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 50);
+
+    // Treat change as a confirmed pick: blur to close keyboard, then re-center the whole card
+    try { courseInput.blur(); } catch {}
+    setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
   });
 
   // Also center on plain focus
