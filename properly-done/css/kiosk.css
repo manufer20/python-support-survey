@@ -5,6 +5,7 @@
 .kiosk-mode #buildingSelectionPage,
 .kiosk-mode #analyticsPage { display:none !important; }
 
+html.kiosk-mode, body.kiosk-mode { scroll-behavior: auto !important; }
 html.kiosk-mode, body.kiosk-mode { height:auto; overflow:auto; }
 body.kiosk-mode{ position:static; inset:auto; height:auto; width:auto; overscroll-behavior:contain; }
 body.kiosk-mode #mainWrapper{ height:auto; overflow:auto; }
