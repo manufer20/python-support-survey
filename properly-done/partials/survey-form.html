@@ -53,20 +53,9 @@
     }
   }
 
-  /* Spacers (top & bottom) shown only in kiosk to provide equal breathing room */
-  .kiosk-pad, .kiosk-pad-top { display: none; }
-  .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top {
-    display: block;
-    height: 45vh;       /* fallback */
-    min-height: 140px;
-  }
-  @supports (height: 1svh) {
-    .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top { height: 45svh; }
-  }
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
-    <div class="kiosk-pad-top"></div>
     <div class="flex items-center justify-center mb-6">
       <h2 class="text-3xl md:text-4xl font-bold text-gray-700">Student Satisfaction Survey</h2>
     </div>
@@ -148,7 +137,6 @@
       </button>
     </form>
 
-    <!-- Extra bottom space so focused inputs aren’t obscured by the on-screen keyboard in tablet mode -->
-    <div class="kiosk-pad"></div>
+
   </div>
 </div>
