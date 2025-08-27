@@ -53,17 +53,6 @@
     }
   }
 
-  /* Tablet: allow inner scrolling and reserve space for keyboard */
-  body.kiosk-mode #surveyPage { 
-    overflow: auto !important; 
-    -webkit-overflow-scrolling: touch; 
-    overscroll-behavior: contain; 
-  }
-  body.kiosk-mode #surveyPage input,
-  body.kiosk-mode #surveyPage select,
-  body.kiosk-mode #surveyPage textarea {
-    scroll-margin-top: 12vh; /* ensure focused field centers above keyboard */
-  }
   /* Spacers (top & bottom) shown only in kiosk to prevent keyboard overlap and give scroll room */
   .kiosk-pad, .kiosk-pad-top { display: none; }
   .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top { 

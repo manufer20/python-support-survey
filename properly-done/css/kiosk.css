@@ -5,9 +5,9 @@
 .kiosk-mode #buildingSelectionPage,
 .kiosk-mode #analyticsPage { display:none !important; }
 
-.kiosk-mode html, .kiosk-mode body { height:auto; overflow:auto; }
-.kiosk-mode body{ position:static; inset:auto; height:auto; width:auto; overscroll-behavior:contain; }
-.kiosk-mode #mainWrapper{ height:auto; overflow:auto; }
+html.kiosk-mode, body.kiosk-mode { height:auto; overflow:auto; }
+body.kiosk-mode{ position:static; inset:auto; height:auto; width:auto; overscroll-behavior:contain; }
+body.kiosk-mode #mainWrapper{ height:auto; overflow:auto; }
 
 .kiosk-mode * { -webkit-touch-callout:none; user-select:none; }
 .kiosk-mode input, .kiosk-mode textarea { -webkit-touch-callout:auto; user-select:text; }
