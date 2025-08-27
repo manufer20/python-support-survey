@@ -21,35 +21,6 @@ function centerSurveyCard(smooth = true) {
   }
 }
 
-// After a pick/blur on mobile, guard against Samsung/Android jump-to-top and re-center
-function recenterAfterPick(delay = 260, guardMs = 1200) {
-  try {
-    const sc = document.scrollingElement || document.documentElement;
-    const before = sc ? sc.scrollTop : 0;
-
-    // Guard for a short period: if the browser jumps upward, immediately restore.
-    let rafId = 0;
-    const endAt = performance.now() + guardMs;
-    const guard = () => {
-      // Only act while in kiosk (tablet) mode
-      if (!document.body.classList.contains('kiosk-mode')) return;
-      try {
-        if ((sc.scrollTop || 0) + 5 < before) sc.scrollTop = before;
-      } catch {}
-      if (performance.now() < endAt) { rafId = requestAnimationFrame(guard); }
-    };
-    rafId = requestAnimationFrame(guard);
-
-    // Final re-center after keyboard/UI settles
-    setTimeout(() => {
-      try {
-        if ((sc.scrollTop || 0) + 5 < before) sc.scrollTop = before;
-        centerSurveyCard(true);
-      } catch {}
-      cancelAnimationFrame(rafId);
-    }, delay);
-  } catch {}
-}
 
 export async function verifyOneTimeToken() {
   if (!linkToken) return true;
@@ -252,17 +223,12 @@ function setupCourseAutocomplete() {
     input.dispatchEvent(new Event('input', { bubbles:true }));
     input.dispatchEvent(new Event('change', { bubbles:true }));
     hideBox();
-    // Desktop keeps caret; kiosk avoids refocus jank and recenters robustly
-    if (document.body.classList.contains('kiosk-mode')) {
-      try { input.blur(); } catch {}
-      recenterAfterPick(240);
-    } else {
-      try {
-        input.focus({ preventScroll: true });
-        const len = input.value.length;
-        input.setSelectionRange(len, len);
-      } catch {}
-    }
+    // Keep caret at the end so the user can tweak the value if needed
+    try {
+      input.focus({ preventScroll: true });
+      const len = input.value.length;
+      input.setSelectionRange(len, len);
+    } catch {}
   }
 
   function filterNow() {
@@ -346,19 +312,6 @@ export function wireSurveyForm(){
     try { setupCourseAutocomplete(); } catch (e) { console.error('autocomplete init failed', e); }
   });
 
-  // Intercept focusout in kiosk mode to prevent external handlers from forcing scrollTop=0
-  if (!window.__kioskFocusoutInterceptorAttached) {
-    document.addEventListener('focusout', (e) => {
-      if (!document.body.classList.contains('kiosk-mode')) return;
-      const card = document.getElementById('surveyCard');
-      if (!card) return;
-      if (!(e.target && card.contains(e.target))) return;
-      try { e.stopImmediatePropagation(); e.stopPropagation(); } catch {}
-      // After focus moves (e.g., closing keyboard or picking a course), re-center the card
-      recenterAfterPick(180);
-    }, { capture: true });
-    window.__kioskFocusoutInterceptorAttached = true;
-  }
 
   // If starting in kiosk, center the card once the layout settles
   if (typeof inKiosk === 'function' && inKiosk()) {
@@ -627,39 +580,6 @@ export function wireSurveyForm(){
     }
     return false;
   }
-
-  // On touch/datalist flows some browsers only fire 'input'. If the value equals an option, treat it as a pick.
-  courseInput.addEventListener('input', () => {
-    if (!document.body.classList.contains('kiosk-mode')) return;
-    if (!isExactCourseMatch(courseInput.value)) return;
-
-    // Consider it selected: blur to close keyboard, then center the card
-    try { courseInput.blur(); } catch {}
-    recenterAfterPick(220);
-  });
-
-  // Re-center and keep the caret editable after choosing an option
-  courseInput.addEventListener('change', () => {
-    if (!document.body.classList.contains('kiosk-mode')) return;
-
-    // Treat change as a confirmed pick: blur to close keyboard, then re-center the whole card
-    try { courseInput.blur(); } catch {}
-    recenterAfterPick(220);
-  });
-
-  // Also center on plain focus
-  courseInput.addEventListener('focus', () => {
-    if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => { try { courseInput.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch {} }, 150);
-    }
-  });
-
-  // When leaving the field (keyboard hides), center the whole card again
-  courseInput.addEventListener('blur', () => {
-    if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
-    }
-  });
 })();
 
 
