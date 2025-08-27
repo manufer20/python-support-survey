@@ -4,20 +4,64 @@ import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
 
+// Return the element that actually scrolls this view (kiosk uses #surveyPage)
+function getScrollContainer() {
+  const sp = document.getElementById('surveyPage');
+  if (sp) {
+    const st = getComputedStyle(sp);
+    if (/(auto|scroll)/.test(st.overflowY)) return sp;
+  }
+  return document.scrollingElement || document.documentElement || document.body;
+}
+
+// Compute element's top offset relative to a given ancestor
+function offsetTopWithin(el, ancestor) {
+  let y = 0, n = el;
+  while (n && n !== ancestor) {
+    y += n.offsetTop || 0;
+    n = n.offsetParent;
+  }
+  return y;
+}
+
 // Center the survey card in the viewport (used on tablet mode open/close keyboard)
 function centerSurveyCard(smooth = true) {
   const card = document.getElementById('surveyCard');
   if (!card) return;
   const behavior = smooth ? 'smooth' : 'auto';
+
   try {
-    // Compute a stable center using the scrollingElement to avoid other listeners (like kiosk focusout) fighting us.
-    const rect = card.getBoundingClientRect();
-    const scrollEl = document.scrollingElement || document.documentElement;
-    const targetTop = (window.scrollY || scrollEl.scrollTop || 0) + rect.top + (rect.height / 2) - (window.innerHeight / 2);
-    scrollEl.scrollTo({ top: Math.max(0, targetTop), behavior });
+    const scroller = getScrollContainer();
+
+    // If the page/root is scrolling, compute based on viewport geometry
+    if (scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body) {
+      const rect = card.getBoundingClientRect();
+      const currentTop = (scroller.scrollTop || window.scrollY || 0);
+      const targetTop = currentTop + rect.top + (rect.height / 2) - (window.innerHeight / 2);
+      scroller.scrollTo({ top: Math.max(0, targetTop), behavior });
+    } else {
+      // If a container (#surveyPage) is the scroller, center inside that container
+      const cardTop = offsetTopWithin(card, scroller);
+      const targetTop = cardTop + (card.offsetHeight / 2) - (scroller.clientHeight / 2);
+      scroller.scrollTo({ top: Math.max(0, targetTop), behavior });
+    }
   } catch {
     try { card.scrollIntoView({ block: 'center', inline: 'nearest', behavior }); } catch {}
   }
+}
+
+// Safari/iPad can briefly jump scrollTop to 0 on blur/keyboard changes; restore then center.
+function recenterAfterPick(delay = 200) {
+  const scroller = getScrollContainer();
+  const before = scroller.scrollTop || 0;
+  setTimeout(() => {
+    try {
+      if (before > 0 && Math.abs((scroller.scrollTop || 0) - before) > 50) {
+        scroller.scrollTop = before;
+      }
+    } catch {}
+    centerSurveyCard(true);
+  }, delay);
 }
 
 export async function verifyOneTimeToken() {
@@ -221,17 +265,17 @@ function setupCourseAutocomplete() {
     input.dispatchEvent(new Event('input', { bubbles:true }));
     input.dispatchEvent(new Event('change', { bubbles:true }));
     hideBox();
-    // Keep caret at end for quick edits
-    try {
-      input.focus({ preventScroll: true });
-      const len = input.value.length;
-      input.setSelectionRange(len, len);
-    } catch {}
-    // On touch devices in kiosk mode, blur to close the keyboard and suppress kiosk focusout auto-scroll
-    if (document.body.classList.contains('kiosk-mode')) {
+    // Desktop: keep caret at the end for quick edits
+    if (!document.body.classList.contains('kiosk-mode')) {
+      try {
+        input.focus();
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+      } catch {}
+    } else {
+      // Tablet (kiosk): close keyboard and re-center without jumping to top
       try { input.blur(); } catch {}
-      // Re-center after the blur/keyboard animation finishes
-      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
+      recenterAfterPick(220);
     }
   }
 
@@ -590,7 +634,7 @@ export function wireSurveyForm(){
 
     // Consider it selected: blur to close keyboard, then center the card
     try { courseInput.blur(); } catch {}
-    setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
+    recenterAfterPick(200);
   });
 
   // Re-center and keep the caret editable after choosing an option
@@ -599,7 +643,7 @@ export function wireSurveyForm(){
 
     // Treat change as a confirmed pick: blur to close keyboard, then re-center the whole card
     try { courseInput.blur(); } catch {}
-    setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 200);
+    recenterAfterPick(200);
   });
 
   // Also center on plain focus
@@ -612,7 +656,7 @@ export function wireSurveyForm(){
   // When leaving the field (keyboard hides), center the whole card again
   courseInput.addEventListener('blur', () => {
     if (document.body.classList.contains('kiosk-mode')) {
-      setTimeout(() => { try { centerSurveyCard(true); } catch {} }, 220);
+      recenterAfterPick(220);
     }
   });
 })();
