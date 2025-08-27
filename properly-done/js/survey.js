@@ -149,33 +149,6 @@ function setupCourseAutocomplete() {
 
   let results = [];
   let activeIndex = -1;
-  // Prevent the whole page from scrolling while the dropdown is open (important on Samsung Internet)
-  let __scrollLocked = false;
-  let __lockY = 0;
-  function lockBodyScroll() {
-    if (__scrollLocked || !document.body.classList.contains('kiosk-mode')) return;
-    __lockY = window.scrollY || (document.scrollingElement && document.scrollingElement.scrollTop) || 0;
-    const b = document.body;
-    b.style.position = 'fixed';
-    b.style.top = `-${__lockY}px`;
-    b.style.left = '0';
-    b.style.right = '0';
-    b.style.width = '100%';
-    b.style.overflow = 'hidden';
-    __scrollLocked = true;
-  }
-  function unlockBodyScroll() {
-    if (!__scrollLocked) return;
-    const b = document.body;
-    b.style.position = '';
-    b.style.top = '';
-    b.style.left = '';
-    b.style.right = '';
-    b.style.width = '';
-    b.style.overflow = '';
-    window.scrollTo(0, __lockY);
-    __scrollLocked = false;
-  }
 
   function positionBox() {
     const r = input.getBoundingClientRect();
@@ -213,15 +186,11 @@ function setupCourseAutocomplete() {
     // Ensure content is measured then positioned
     positionBox();
     box.style.display = 'block';
-    // Lock page scroll while suggestions are open (tablet mode only)
-    if (document.body.classList.contains('kiosk-mode')) { lockBodyScroll(); }
   }
 
   function hideBox() {
     box.style.display = 'none';
     activeIndex = -1;
-    // Restore page scroll when suggestions close
-    unlockBodyScroll();
   }
 
   function render(list) {
@@ -333,9 +302,6 @@ function setupCourseAutocomplete() {
   ['scroll','resize','orientationchange'].forEach(evt => {
     window.addEventListener(evt, () => { if (box.style.display !== 'none') positionBox(); }, { passive:true });
   });
-  // Ensure pointer scrolling on the dropdown never scrolls the page
-  box.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
-  box.addEventListener('touchmove', (e) => { e.stopPropagation(); }, { passive: true });
 }
 
 export function wireSurveyForm(){
