@@ -53,12 +53,17 @@
     }
   }
 
-  /* Spacers (top & bottom) shown only in kiosk to prevent keyboard overlap and give scroll room */
+  /* Spacers (top & bottom) shown only in kiosk to provide equal 20% breathing room */
   .kiosk-pad, .kiosk-pad-top { display: none; }
-  .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top { 
-    display: block; 
-    height: 28.6vh;   /* 30% more than the previous 22vh */
-    min-height: 208px; /* 30% more than the previous 160px */
+  .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top {
+    display: block;
+    height: 20vh;       /* fallback for browsers without small viewport units */
+    min-height: 140px;  /* reasonable floor so very short viewports still get space */
+  }
+  @supports (height: 1svh) {
+    .kiosk-mode .kiosk-pad, .kiosk-mode .kiosk-pad-top {
+      height: 20svh;    /* use small viewport height on mobile to ignore browser chrome */
+    }
   }
 
   /* Touch devices: custom course suggestion popover (JS toggles visibility) */
