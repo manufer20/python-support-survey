@@ -3,6 +3,69 @@ import { getSavedKey } from './auth.js';
 import { showError, friendlyError } from './errors.js';
 import { syncFabVisibility } from './kiosk.js';
 
+// === Minimal native datalist loader ===
+function loadCoursesDatalist() {
+  (async () => {
+    try {
+      const res = await fetch('./data/courses.csv', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+
+      // robust-ish parse: handle quoted names/newlines
+      const lines = text.split(/\r?\n/);
+      const records = [];
+      let buf = '', inQuotes = false;
+
+      for (const line of lines) {
+        const q = (line.match(/"/g) || []).length;
+        if (!inQuotes) {
+          buf = line;
+          if (q % 2 === 1) { inQuotes = true; continue; }
+        } else {
+          buf += '\n' + line;
+          if (q % 2 === 1) inQuotes = false;
+          if (inQuotes) continue;
+        }
+        records.push(buf);
+      }
+
+      // drop header if present
+      if (records.length && /course|code/i.test(records[0])) records.shift();
+
+      // Build "CODE - Name" options
+      const options = [];
+      for (const rec of records) {
+        const idx = rec.indexOf(',');
+        if (idx === -1) continue;
+        const code = rec.slice(0, idx).trim();
+        let name = rec.slice(idx + 1)
+          .replace(/\r/g, '')
+          .replace(/CR$/, '')
+          .replace(/^"+|"+$/g, '')
+          .trim();
+        if (!code || !name) continue;
+        options.push(`${code} - ${name}`);
+      }
+
+      // Support either id used in your HTML
+      const dl = document.getElementById('course-suggestions') || document.getElementById('courses');
+      if (!dl) return;
+
+      dl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (const v of options) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        frag.appendChild(opt);
+      }
+      dl.appendChild(frag);
+    } catch (err) {
+      console.error('courses.csv load failed:', err);
+    }
+  })();
+}
+
+
 export async function verifyOneTimeToken() {
   if (!linkToken) return true;
   try {
@@ -23,6 +86,7 @@ export async function verifyOneTimeToken() {
 
 export function wireSurveyForm(){
   verifyOneTimeToken();
+  loadCoursesDatalist(); 
   try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch {}
 
   const form = document.getElementById("surveyForm");
