@@ -31,8 +31,8 @@ body.student-flow header { display: none !important; }
 /* Apply even if some pages don't toggle .student-flow */
 body.kiosk-mode #surveyPage,
 body.kiosk-mode.student-flow #surveyPage {
-  padding: 1rem !important;
-  padding-bottom: calc(1rem + var(--kbd-offset, 0px)) !important;
+  padding: 3rem !important;
+  padding-bottom: calc(3rem + var(--kbd-offset, 0px)) !important;
 }
 
 body.kiosk-mode #surveyCard,
