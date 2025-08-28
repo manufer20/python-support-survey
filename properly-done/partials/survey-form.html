@@ -56,6 +56,10 @@
 input[list]::-webkit-calendar-picker-indicator { display: none !important; }
 input[list]::-webkit-list-button { display: none !important; } /* legacy Chromium */
 input[list] { -webkit-appearance: none; appearance: none; background-image: none !important; }
+  /* Extra breathing room when the Course field is scrolled to the very top.
+     Works with scrollIntoView and native focus auto-scrolling. */
+  #course_number { scroll-margin-top: 4rem; }             /* supporter/desktop */
+  body.kiosk-mode #course_number { scroll-margin-top: 6rem; } /* tablet mode */
 </style>
 <div id="surveyPage" class="px-2 sm:px-4 grid place-items-center hidden" style="min-height: calc(100vh - 4rem);">
   <div id="surveyCard" class="w-full max-w-5xl xl:max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
